@@ -9,9 +9,9 @@ const int ENB = 32;
 const int pwmFreq = 1000;
 const int pwmResolution = 8;
 
-// 0-255
-const int speedA = 120;
-const int speedB = 120;
+// Tune these later if motors are mismatched
+int speedA = 120;
+int speedB = 120;
 
 void stopMotors() {
   ledcWrite(ENA, 0);
@@ -77,14 +77,13 @@ void setup() {
   stopMotors();
 
   Serial.println("ESP32 ready");
-  Serial.println("Commands: f=forward, b=backward, l=left, r=right, s=stop");
+  Serial.println("Commands: f b l r s");
 }
 
 void loop() {
   if (Serial.available() > 0) {
     char cmd = Serial.read();
 
-    // Ignore newline / carriage return
     if (cmd == '\n' || cmd == '\r') {
       return;
     }
@@ -92,23 +91,35 @@ void loop() {
     Serial.print("Received: ");
     Serial.println(cmd);
 
-    if (cmd == 'f') {
-      forward();
-      Serial.println("Action: forward");
-    } else if (cmd == 'b') {
-      backward();
-      Serial.println("Action: backward");
-    } else if (cmd == 'l') {
-      turnLeft();
-      Serial.println("Action: turn left");
-    } else if (cmd == 'r') {
-      turnRight();
-      Serial.println("Action: turn right");
-    } else if (cmd == 's') {
-      stopMotors();
-      Serial.println("Action: stop");
-    } else {
-      Serial.println("Unknown command");
+    switch (cmd) {
+      case 'f':
+        forward();
+        Serial.println("Action: forward");
+        break;
+
+      case 'b':
+        backward();
+        Serial.println("Action: backward");
+        break;
+
+      case 'l':
+        turnLeft();
+        Serial.println("Action: left");
+        break;
+
+      case 'r':
+        turnRight();
+        Serial.println("Action: right");
+        break;
+
+      case 's':
+        stopMotors();
+        Serial.println("Action: stop");
+        break;
+
+      default:
+        Serial.println("Unknown command");
+        break;
     }
   }
 }
