@@ -8,11 +8,13 @@ volatile long right_ticks = 0;
 volatile int left_direction = 0;
 volatile int right_direction = 0;
 
-// TODO: Replace these placeholder pins with your actual wiring.
-const int LEFT_ENC_A = 34;
-const int LEFT_ENC_B = 35;
-const int RIGHT_ENC_A = 36;
-const int RIGHT_ENC_B = 39;
+// Left encoder = Motor encoder A
+const int LEFT_ENC_A = 34;   // yellow -> A2 / GPIO34
+const int LEFT_ENC_B = 39;   // white  -> A3 / GPIO39
+
+// Right encoder = Motor encoder B
+const int RIGHT_ENC_A = 25;  // yellow -> A1 / GPIO25
+const int RIGHT_ENC_B = 26;  // white  -> A0 / GPIO26
 
 unsigned long last_report_ms = 0;
 const unsigned long report_interval_ms = 250;
