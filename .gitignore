@@ -1,4 +1,5 @@
 .vscode/
+.codex
 
 ros2_ws/build
 ros2_ws/install
@@ -6,3 +7,7 @@ ros2_ws/log
 
 ros2_ws/src/my_robot_controller/resource
 ros2_ws/src/my_robot_controller/test
+
+ros2_ws/src/rplidar_ros/.gitignore
+ros2_ws/src/rplidar_ros/debian/
+ros2_ws/src/rplidar_ros/*.png
