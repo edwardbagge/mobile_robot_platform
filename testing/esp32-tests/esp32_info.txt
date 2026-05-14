@@ -1,6 +1,0 @@
-This folder includes tests related to the ESP32 (nothing to do with RPI 5)
-
-    1) Does the ESP32 work?
-    2) Is the ESP32 able to control one motor?
-    3) ---||--- dual motors?
-    4) PWM with single and dual motors?
