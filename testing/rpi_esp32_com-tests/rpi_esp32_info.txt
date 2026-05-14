@@ -1,3 +1,0 @@
-This folder includes tests related to the communication between the RPI 5 and the ESP32
-
-    1) Can the RPI 5 find the ESP32 when connected via USB?
