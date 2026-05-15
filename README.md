@@ -1,30 +1,27 @@
 # mobile_robot_platform
 
-Hardware:
+Market hardware:
 
-1) RPLIDAR 360deg Laser Scanner Development Kit (A2)
-2) Raspberry Pi 5 8GB
-3) DC Motor (x2)
-    a) GB37Y3530-43.8EN
-    b) DC12V 255 RPM
-4) Adafruit ESP32
+1) Slamtec RPLIDAR 360deg Laser Scanner Development Kit (A2)
+3) Raspberry Pi 5 8GB
+4) Motor (x2)
+    a) Geared 12V DC
+    b) https://www.dfrobot.com/product-634.html?srsltid=AfmBOooisHisbAdQTIFWqWjwyqfrQ6lSMWhfAyFf_eR1mStN2Lgw48z1
+5) Adafruit ESP32
     a) Site: https://www.adafruit.com/product/3405?srsltid=AfmBOopUAx100z8yAm6UoCGiwOnHXg8pmEAWBhQBoX1S4zC-emE5ZuI-
     b) Guide: https://learn.adafruit.com/adafruit-huzzah32-esp32-feather
-5) L298N motor driver
+6) L298N motor driver
     a) Link: https://www.kouluelektroniikka.fi/tuote/ohjelmoitava-elektroniikka/moduulit/moottorinohjaimet/4615220/moottoriohjain-l298n?gad_source=1&gad_campaignid=18512997805&gclid=CjwKCAjwhLPOBhBiEiwA8_wJHC9BXevq7BbO3PPyvmkiGMVP1ICW89LMHhSXFAoyNezPm5dvVIyZ-RoCt-4QAvD_BwE
-6) 3S LiPo battery
+7) 3S LiPo battery
     a) https://www.akkuasiantuntija.fi/fi/artiklar/li-po-3s-111v-30c-2-200-mah-t-kontakti-vapex.html?gad_source=1&gad_campaignid=23517029518&gclid=CjwKCAjw1N7NBhAoEiwAcPchp0HhxQxsXMXeCo7GeVmALIXp3xbAS1I--QNepleqVuBZ9lA_ofojqhoCBx8QAvD_BwE
+8) Multiple Wago connectors, jumper wires, 3mm bolts; nuts; washers, double-sided tape, zip-ties, and other "prototyping"-stuff
+9) Breadboard
+10) Levelshifter (5V/3.3V)
+11) Mounting hub (part that is attached to 6mm motor-shaft)
+    a) https://partco.shop/product/axle-adapter-6-25-4mm-m3-4004
 
-Done setups and tests:
+Custom hardware:
 
-1) RPI 5 has Ubuntu 24.04 and rplidar.
-    a) Slamtec A2M8 works and recognizes surroundings.
-2) Arduino IDE has ESP32 expansion-pack
-3) ESP32 can control DC-motors
-    a) Single motor
-    b) Dual motor
-    c) PWM
-
-To be done:
-
-1) Encoders on motors work?
+1) Chassis
+2) Elevated platform for Lidar
+3) Holders for motors
