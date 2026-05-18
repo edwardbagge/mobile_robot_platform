@@ -10,11 +10,11 @@ find_package(ament_cmake REQUIRED)
 find_package(rclcpp REQUIRED)
 find_package(std_msgs REQUIRED)
 
-add_executable(11_encoder_feedback_parser_test src/11_encoder_feedback_parser_test.cpp)
-ament_target_dependencies(11_encoder_feedback_parser_test rclcpp std_msgs)
+add_executable(encoder_feedback_parser_test src/encoder_feedback_parser_test.cpp)
+ament_target_dependencies(encoder_feedback_parser_test rclcpp std_msgs)
 
 install(TARGETS
-  11_encoder_feedback_parser_test
+  encoder_feedback_parser_test
   DESTINATION lib/${PROJECT_NAME}
 )
 

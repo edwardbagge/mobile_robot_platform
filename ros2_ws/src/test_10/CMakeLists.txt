@@ -9,11 +9,11 @@ find_package(geometry_msgs REQUIRED)
 find_package(ament_cmake REQUIRED)
 find_package(rclcpp REQUIRED)
 
-add_executable(10_cmd_vel_serial_test src/10_cmd_vel_serial_test.cpp)
-ament_target_dependencies(10_cmd_vel_serial_test rclcpp geometry_msgs)
+add_executable(cmd_vel_serial_test src/cmd_vel_serial_test.cpp)
+ament_target_dependencies(cmd_vel_serial_test rclcpp geometry_msgs)
 
 install(TARGETS
-  10_cmd_vel_serial_test
+  cmd_vel_serial_test
   DESTINATION lib/${PROJECT_NAME}
 )
 
