@@ -1,0 +1,176 @@
+wingman@wingman-desktop:~$ cd Documents/mobile_robot_platform/ros2_ws
+wingman@wingman-desktop:~/Documents/mobile_robot_platform/ros2_ws$ colcon build --packages-select test_09
+Starting >>> test_09 
+Finished <<< test_09 [0.23s]                  
+
+Summary: 1 package finished [0.45s]
+wingman@wingman-desktop:~/Documents/mobile_robot_platform/ros2_ws$ source install/setup.bash
+wingman@wingman-desktop:~/Documents/mobile_robot_platform/ros2_ws$ ros2 run test_09 serial_bridge_test
+[INFO] [1779099059.921096987] [serial_bridge_test]: Serial port opened successfully.
+[INFO] [1779099059.926486160] [serial_bridge_test]: ROS 2 serial bridge test started.
+[INFO] [1779099059.926613717] [serial_bridge_test]: Listening on /robot_command
+[INFO] [1779099059.926646569] [serial_bridge_test]: Serial port: /dev/ttyUSB0
+[INFO] [1779099073.935075031] [serial_bridge_test]: ESP32: ets Jul 29 2019 12:21:46
+
+
+
+rst:0x1 (POWERON_RESET),boot:0x13 (SPI_FAST_FLASH_BOOT)
+
+configsip: 0, SPIWP:0xee
+
+clk_drv:0x00,q_drv:0x00,d_drv:0x00,cs0_drv:0x00,hd_drv:0x00,wp_drv:0x00
+
+mode:DIO, clock div:1
+
+load:0x3fff0030,len:4640
+
+load:0x40078000,len:15
+[INFO] [1779099073.945490318] [serial_bridge_test]: ESP32: 620
+
+ho 0 tail 12 room 4
+
+load:0x40080400,len:3164
+
+entry 0x4008059c
+
+
+[INFO] [1779099076.109992702] [serial_bridge_test]: ESP32: Motors stopped.
+
+FEEDBACK | LEFT ticks = 0 | RIGHT ticks = 0
+
+
+
+=== RPI MOTOR ENCODER FEEDBACK TEST ===
+
+ESP32 ready.
+
+Keep robot lifted from ground for first test.
+
+Commands:
+
+f = forward
+
+b = backward
+
+l = turn left
+
+r = turn right
+
+x = stop
+
+s = status
+[INFO] [1779099076.120274284] [serial_bridge_test]: ESP32: 
+
+z = reset encoder counts
+
+
+
+
+[INFO] [1779099088.723198831] [serial_bridge_test]: Sent command to ESP32: s
+[INFO] [1779099088.744587946] [serial_bridge_test]: ESP32: Received command: s
+
+
+
+=== STATUS ===
+
+Last command = stop
+
+Motors running = NO
+
+Test speed PWM = 90
+
+Motor timeout ms = 1000
+
+Feedback interval ms = 250
+
+LEFT ticks = 0
+
+RIGHT ticks = 0
+
+
+
+
+[INFO] [1779099134.675562935] [serial_bridge_test]: Sent command to ESP32: f
+[INFO] [1779099134.685393515] [serial_bridge_test]: ESP32: Received command: f
+
+Motor command: forward
+
+FEEDBACK | LEFT ticks = 0 | RIGHT ticks = 0
+
+
+[INFO] [1779099134.937749583] [serial_bridge_test]: ESP32: FEEDBACK | LEFT ticks = 71 | RIGHT ticks = 77
+
+
+[INFO] [1779099135.189718593] [serial_bridge_test]: ESP32: FEEDBACK | LEFT ticks = 243 | RIGHT ticks = 255
+
+
+[INFO] [1779099135.431417798] [serial_bridge_test]: ESP32: FEEDBACK | LEFT ticks = 468 | RIGHT ticks = 489
+
+
+[INFO] [1779099135.693241740] [serial_bridge_test]: ESP32: FEEDBACK | LEFT ticks = 723 | RIGHT ticks = 749
+
+Motor timeout reached.
+
+Motors stopped.
+
+FEEDBACK | LEFT ticks = 723 | RIGHT ticks = 749
+
+
+[INFO] [1779099170.581078141] [serial_bridge_test]: Sent command to ESP32: x
+[INFO] [1779099170.594030486] [serial_bridge_test]: ESP32: Received command: x
+
+Motors stopped.
+
+FEEDBACK | LEFT ticks = 1083 | RIGHT ticks = 1109
+
+
+[INFO] [1779099201.258203181] [serial_bridge_test]: Sent command to ESP32: z
+[INFO] [1779099201.268867416] [serial_bridge_test]: ESP32: Received command: z
+
+Encoder counts reset.
+
+
+[INFO] [1779099264.101816957] [serial_bridge_test]: Sent command to ESP32: f
+[INFO] [1779099264.114150002] [serial_bridge_test]: ESP32: Received command: f
+
+Motor command: forward
+
+FEEDBACK | LEFT ticks = 0 | RIGHT ticks = 0
+
+
+[INFO] [1779099264.366523284] [serial_bridge_test]: ESP32: FEEDBACK | LEFT ticks = 80 | RIGHT ticks = 83
+
+
+[INFO] [1779099264.608483053] [serial_bridge_test]: ESP32: FEEDBACK | LEFT ticks = 265 | RIGHT ticks = 272
+
+
+[INFO] [1779099264.860331484] [serial_bridge_test]: ESP32: FEEDBACK | LEFT ticks = 500 | RIGHT ticks = 515
+
+
+[INFO] [1779099265.112092250] [serial_bridge_test]: ESP32: Motor timeout reached.
+
+Motors stopped.
+
+FEEDBACK | LEFT ticks = 762 | RIGHT ticks = 784
+
+
+[INFO] [1779099277.062362033] [serial_bridge_test]: Sent command to ESP32: s
+[INFO] [1779099277.090624900] [serial_bridge_test]: ESP32: Received command: s
+
+
+
+=== STATUS ===
+
+Last command = stop
+
+Motors running = NO
+
+Test speed PWM = 90
+
+Motor timeout ms = 1000
+
+Feedback interval ms = 250
+
+LEFT ticks = 1138
+
+RIGHT ticks = 1173
