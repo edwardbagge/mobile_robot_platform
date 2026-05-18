@@ -3,7 +3,7 @@
 <package format="3">
   <name>test_09</name>
   <version>0.0.0</version>
-  <description>TODO: Package description</description>
+  <description>ROS 2 test package for bridging /robot_command string messages to ESP32 serial commands.</description>
   <maintainer email="edwardjohnbagge@hotmail.com">edward</maintainer>
   <license>MIT</license>
 

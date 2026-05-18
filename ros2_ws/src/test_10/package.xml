@@ -3,7 +3,7 @@
 <package format="3">
   <name>test_10</name>
   <version>0.0.0</version>
-  <description>TODO: Package description</description>
+  <description>ROS 2 test package for bridging /cmd_vel messages to ESP32 serial motor commands.</description>
   <maintainer email="edward.bagge@aalto.fi">baggee1</maintainer>
   <license>MIT</license>
 

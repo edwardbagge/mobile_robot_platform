@@ -1,5 +1,5 @@
-// 10_cmd_vel_serial_test.cpp
-// ROS 2 Jazzy C++ cmd_vel to ESP32 serial command test
+// cmd_vel_serial_bridge_test.cpp
+// ROS 2 Jazzy C++ cmd_vel serial bridge test
 //
 // Purpose:
 // Subscribe to /cmd_vel and convert geometry_msgs/msg/Twist messages
@@ -32,17 +32,21 @@
 #include <string>
 #include <thread>
 
-class CmdVelSerialTestNode : public rclcpp::Node
+class CmdVelSerialBridgeNode : public rclcpp::Node
 {
 public:
-  CmdVelSerialTestNode()
-  : Node("cmd_vel_serial_test"), running_(true)
+  CmdVelSerialBridgeNode()
+  : Node("cmd_vel_serial_bridge_test"), running_(true)
   {
-    serial_port_ = "/dev/ttyUSB0";
+    serial_port_ = this->declare_parameter<std::string>("serial_port", "/dev/ttyUSB0");
     baud_rate_ = B115200;
 
-    linear_threshold_ = 0.01;
-    angular_threshold_ = 0.01;
+    linear_threshold_ = this->declare_parameter<double>("linear_threshold", 0.01);
+    angular_threshold_ = this->declare_parameter<double>("angular_threshold", 0.01);
+    suppress_repeated_commands_ = this->declare_parameter<bool>(
+      "suppress_repeated_commands",
+      true
+    );
 
     last_sent_command_ = "";
 
@@ -51,17 +55,22 @@ public:
     subscription_ = this->create_subscription<geometry_msgs::msg::Twist>(
       "/cmd_vel",
       10,
-      std::bind(&CmdVelSerialTestNode::cmdVelCallback, this, std::placeholders::_1)
+      std::bind(&CmdVelSerialBridgeNode::cmdVelCallback, this, std::placeholders::_1)
     );
 
-    read_thread_ = std::thread(&CmdVelSerialTestNode::readSerialLoop, this);
+    read_thread_ = std::thread(&CmdVelSerialBridgeNode::readSerialLoop, this);
 
-    RCLCPP_INFO(this->get_logger(), "CMD_VEL serial test node started.");
+    RCLCPP_INFO(this->get_logger(), "CMD_VEL serial bridge test started.");
     RCLCPP_INFO(this->get_logger(), "Listening on /cmd_vel");
     RCLCPP_INFO(this->get_logger(), "Serial port: %s", serial_port_.c_str());
+    RCLCPP_INFO(
+      this->get_logger(),
+      "Suppress repeated commands: %s",
+      suppress_repeated_commands_ ? "true" : "false"
+    );
   }
 
-  ~CmdVelSerialTestNode()
+  ~CmdVelSerialBridgeNode()
   {
     running_ = false;
 
@@ -88,6 +97,7 @@ private:
 
   double linear_threshold_;
   double angular_threshold_;
+  bool suppress_repeated_commands_;
 
   std::string last_sent_command_;
 
@@ -149,14 +159,16 @@ private:
   {
     std::string command = twistToCommand(*msg);
 
-    if (command != last_sent_command_)
+    if (!suppress_repeated_commands_ || command != last_sent_command_)
     {
-      sendSerialCommand(command);
-      last_sent_command_ = command;
+      if (sendSerialCommand(command))
+      {
+        last_sent_command_ = command;
+      }
     }
   }
 
-  std::string twistToCommand(const geometry_msgs::msg::Twist & twist)
+  std::string twistToCommand(const geometry_msgs::msg::Twist & twist) const
   {
     double linear_x = twist.linear.x;
     double angular_z = twist.angular.z;
@@ -193,12 +205,12 @@ private:
     return "x";
   }
 
-  void sendSerialCommand(const std::string & command)
+  bool sendSerialCommand(const std::string & command)
   {
     if (serial_fd_ < 0)
     {
       RCLCPP_ERROR(this->get_logger(), "Serial port is not open.");
-      return;
+      return false;
     }
 
     std::string command_with_newline = command + "\n";
@@ -212,16 +224,17 @@ private:
     if (bytes_written < 0)
     {
       RCLCPP_ERROR(this->get_logger(), "Failed to write command to serial port.");
+      return false;
     }
-    else
-    {
-      RCLCPP_INFO(this->get_logger(), "Sent command to ESP32: %s", command.c_str());
-    }
+
+    RCLCPP_INFO(this->get_logger(), "Sent command to ESP32: %s", command.c_str());
+    return true;
   }
 
   void readSerialLoop()
   {
     char buffer[256];
+    std::string line_buffer;
 
     while (running_)
     {
@@ -232,9 +245,25 @@ private:
         if (bytes_read > 0)
         {
           buffer[bytes_read] = '\0';
+          line_buffer += std::string(buffer);
 
-          std::string received(buffer);
-          RCLCPP_INFO(this->get_logger(), "ESP32: %s", received.c_str());
+          size_t newline_position;
+
+          while ((newline_position = line_buffer.find('\n')) != std::string::npos)
+          {
+            std::string line = line_buffer.substr(0, newline_position);
+            line_buffer.erase(0, newline_position + 1);
+
+            if (!line.empty() && line.back() == '\r')
+            {
+              line.pop_back();
+            }
+
+            if (!line.empty())
+            {
+              RCLCPP_INFO(this->get_logger(), "ESP32: %s", line.c_str());
+            }
+          }
         }
       }
 
@@ -246,7 +275,7 @@ private:
 int main(int argc, char ** argv)
 {
   rclcpp::init(argc, argv);
-  auto node = std::make_shared<CmdVelSerialTestNode>();
+  auto node = std::make_shared<CmdVelSerialBridgeNode>();
   rclcpp::spin(node);
   rclcpp::shutdown();
   return 0;

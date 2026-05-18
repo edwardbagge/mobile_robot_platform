@@ -7,14 +7,15 @@ endif()
 
 # find dependencies
 find_package(ament_cmake REQUIRED)
+find_package(geometry_msgs REQUIRED)
 find_package(rclcpp REQUIRED)
 find_package(std_msgs REQUIRED)
 
-add_executable(encoder_feedback_parser_test src/encoder_feedback_parser_test.cpp)
-ament_target_dependencies(encoder_feedback_parser_test rclcpp std_msgs)
+add_executable(cmd_vel_encoder_bridge_test src/cmd_vel_encoder_bridge_test.cpp)
+ament_target_dependencies(cmd_vel_encoder_bridge_test geometry_msgs rclcpp std_msgs)
 
 install(TARGETS
-  encoder_feedback_parser_test
+  cmd_vel_encoder_bridge_test
   DESTINATION lib/${PROJECT_NAME}
 )
 

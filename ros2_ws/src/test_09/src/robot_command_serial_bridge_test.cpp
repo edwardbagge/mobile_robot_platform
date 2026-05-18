@@ -1,5 +1,5 @@
-// 09_ros2_serial_bridge_test.cpp
-// ROS 2 Jazzy C++ serial bridge test
+// robot_command_serial_bridge_test.cpp
+// ROS 2 Jazzy C++ robot command serial bridge test
 //
 // Purpose:
 // Subscribe to /robot_command and send commands to ESP32 over USB serial.
@@ -28,13 +28,12 @@
 #include <string>
 #include <thread>
 
-class SerialBridgeNode : public rclcpp::Node
+class RobotCommandSerialBridgeNode : public rclcpp::Node
 {
 public:
-  SerialBridgeNode()
-  : Node("serial_bridge_test"), running_(true)
+  RobotCommandSerialBridgeNode() : Node("robot_command_serial_bridge_test"), running_(true)
   {
-    serial_port_ = "/dev/ttyUSB0";
+    serial_port_ = this->declare_parameter<std::string>("serial_port", "/dev/ttyUSB0");
     baud_rate_ = B115200;
 
     openSerialPort();
@@ -42,19 +41,24 @@ public:
     subscription_ = this->create_subscription<std_msgs::msg::String>(
       "/robot_command",
       10,
-      std::bind(&SerialBridgeNode::commandCallback, this, std::placeholders::_1)
+      std::bind(&RobotCommandSerialBridgeNode::commandCallback, this, std::placeholders::_1)
     );
 
-    read_thread_ = std::thread(&SerialBridgeNode::readSerialLoop, this);
+    read_thread_ = std::thread(&RobotCommandSerialBridgeNode::readSerialLoop, this);
 
-    RCLCPP_INFO(this->get_logger(), "ROS 2 serial bridge test started.");
+    RCLCPP_INFO(this->get_logger(), "Robot command serial bridge test started.");
     RCLCPP_INFO(this->get_logger(), "Listening on /robot_command");
     RCLCPP_INFO(this->get_logger(), "Serial port: %s", serial_port_.c_str());
   }
 
-  ~SerialBridgeNode()
+  ~RobotCommandSerialBridgeNode()
   {
     running_ = false;
+
+    if (serial_fd_ >= 0)
+    {
+      sendCommandString("x");
+    }
 
     if (read_thread_.joinable())
     {
@@ -128,12 +132,6 @@ private:
 
   void commandCallback(const std_msgs::msg::String::SharedPtr msg)
   {
-    if (serial_fd_ < 0)
-    {
-      RCLCPP_ERROR(this->get_logger(), "Serial port is not open.");
-      return;
-    }
-
     std::string command = msg->data;
 
     if (!isValidCommand(command))
@@ -142,18 +140,35 @@ private:
       return;
     }
 
-    command += "\n";
+    if (sendCommandString(command))
+    {
+      RCLCPP_INFO(this->get_logger(), "Sent command to ESP32: %s", msg->data.c_str());
+    }
+  }
 
-    ssize_t bytes_written = write(serial_fd_, command.c_str(), command.length());
+  bool sendCommandString(const std::string & command)
+  {
+    if (serial_fd_ < 0)
+    {
+      RCLCPP_ERROR(this->get_logger(), "Serial port is not open.");
+      return false;
+    }
+
+    std::string command_with_newline = command + "\n";
+
+    ssize_t bytes_written = write(
+      serial_fd_,
+      command_with_newline.c_str(),
+      command_with_newline.length()
+    );
 
     if (bytes_written < 0)
     {
       RCLCPP_ERROR(this->get_logger(), "Failed to write command to serial port.");
+      return false;
     }
-    else
-    {
-      RCLCPP_INFO(this->get_logger(), "Sent command to ESP32: %s", msg->data.c_str());
-    }
+
+    return true;
   }
 
   bool isValidCommand(const std::string & command)
@@ -170,6 +185,7 @@ private:
   void readSerialLoop()
   {
     char buffer[256];
+    std::string line_buffer;
 
     while (running_)
     {
@@ -180,9 +196,25 @@ private:
         if (bytes_read > 0)
         {
           buffer[bytes_read] = '\0';
+          line_buffer += std::string(buffer);
 
-          std::string received(buffer);
-          RCLCPP_INFO(this->get_logger(), "ESP32: %s", received.c_str());
+          size_t newline_position;
+
+          while ((newline_position = line_buffer.find('\n')) != std::string::npos)
+          {
+            std::string line = line_buffer.substr(0, newline_position);
+            line_buffer.erase(0, newline_position + 1);
+
+            if (!line.empty() && line.back() == '\r')
+            {
+              line.pop_back();
+            }
+
+            if (!line.empty())
+            {
+              RCLCPP_INFO(this->get_logger(), "ESP32: %s", line.c_str());
+            }
+          }
         }
       }
 
@@ -194,7 +226,7 @@ private:
 int main(int argc, char ** argv)
 {
   rclcpp::init(argc, argv);
-  auto node = std::make_shared<SerialBridgeNode>();
+  auto node = std::make_shared<RobotCommandSerialBridgeNode>();
   rclcpp::spin(node);
   rclcpp::shutdown();
   return 0;

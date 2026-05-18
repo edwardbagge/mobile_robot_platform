@@ -1,16 +1,21 @@
-// 11_encoder_feedback_parser_test.cpp
-// ROS 2 Jazzy C++ encoder feedback parser test
+// cmd_vel_encoder_bridge_test.cpp
+// ROS 2 Jazzy C++ combined cmd_vel serial control and encoder feedback test
 //
 // Purpose:
-// Read ESP32 serial feedback lines and parse encoder tick values.
+// Send serial motor commands to the ESP32 from /cmd_vel and parse encoder
+// feedback lines into ROS topics.
 //
 // Expected ESP32 feedback format:
 // FEEDBACK | LEFT ticks = 791 | RIGHT ticks = 713
+//
+// Subscribes:
+// /cmd_vel : geometry_msgs/msg/Twist
 //
 // Publishes:
 // /left_encoder_ticks  : std_msgs/msg/Int64
 // /right_encoder_ticks : std_msgs/msg/Int64
 
+#include <geometry_msgs/msg/twist.hpp>
 #include <rclcpp/rclcpp.hpp>
 #include <std_msgs/msg/int64.hpp>
 
@@ -19,19 +24,26 @@
 #include <unistd.h>
 
 #include <atomic>
+#include <cmath>
 #include <cstring>
 #include <regex>
 #include <string>
 #include <thread>
 
-class EncoderFeedbackParserNode : public rclcpp::Node
+class CmdVelEncoderBridgeNode : public rclcpp::Node
 {
 public:
-  EncoderFeedbackParserNode()
-  : Node("encoder_feedback_parser_test"), running_(true)
+  CmdVelEncoderBridgeNode()
+  : Node("cmd_vel_encoder_bridge_test"), running_(true)
   {
-    serial_port_ = "/dev/ttyUSB0";
+    serial_port_ = this->declare_parameter<std::string>("serial_port", "/dev/ttyUSB0");
     baud_rate_ = B115200;
+    linear_threshold_ = this->declare_parameter<double>("linear_threshold", 0.01);
+    angular_threshold_ = this->declare_parameter<double>("angular_threshold", 0.01);
+    suppress_repeated_commands_ = this->declare_parameter<bool>(
+      "suppress_repeated_commands",
+      false
+    );
 
     left_publisher_ = this->create_publisher<std_msgs::msg::Int64>(
       "/left_encoder_ticks",
@@ -43,20 +55,38 @@ public:
       10
     );
 
+    subscription_ = this->create_subscription<geometry_msgs::msg::Twist>(
+      "/cmd_vel",
+      10,
+      std::bind(&CmdVelEncoderBridgeNode::cmdVelCallback, this, std::placeholders::_1)
+    );
+
     openSerialPort();
 
     read_thread_ = std::thread(
-      &EncoderFeedbackParserNode::readSerialLoop,
+      &CmdVelEncoderBridgeNode::readSerialLoop,
       this
     );
 
-    RCLCPP_INFO(this->get_logger(), "Encoder feedback parser test started.");
+    RCLCPP_INFO(this->get_logger(), "CMD_VEL encoder bridge test started.");
+    RCLCPP_INFO(this->get_logger(), "Listening on /cmd_vel");
+    RCLCPP_INFO(this->get_logger(), "Publishing /left_encoder_ticks and /right_encoder_ticks");
     RCLCPP_INFO(this->get_logger(), "Serial port: %s", serial_port_.c_str());
+    RCLCPP_INFO(
+      this->get_logger(),
+      "Suppress repeated commands: %s",
+      suppress_repeated_commands_ ? "true" : "false"
+    );
   }
 
-  ~EncoderFeedbackParserNode()
+  ~CmdVelEncoderBridgeNode()
   {
     running_ = false;
+
+    if (serial_fd_ >= 0)
+    {
+      sendSerialCommand("x");
+    }
 
     if (read_thread_.joinable())
     {
@@ -73,10 +103,15 @@ private:
   int serial_fd_ = -1;
   std::string serial_port_;
   speed_t baud_rate_;
+  double linear_threshold_;
+  double angular_threshold_;
+  bool suppress_repeated_commands_;
+  std::string last_sent_command_;
 
   std::atomic<bool> running_;
   std::thread read_thread_;
 
+  rclcpp::Subscription<geometry_msgs::msg::Twist>::SharedPtr subscription_;
   rclcpp::Publisher<std_msgs::msg::Int64>::SharedPtr left_publisher_;
   rclcpp::Publisher<std_msgs::msg::Int64>::SharedPtr right_publisher_;
 
@@ -133,6 +168,82 @@ private:
     RCLCPP_INFO(this->get_logger(), "Serial port opened successfully.");
   }
 
+  void cmdVelCallback(const geometry_msgs::msg::Twist::SharedPtr msg)
+  {
+    std::string command = twistToCommand(*msg);
+
+    if (!suppress_repeated_commands_ || command != last_sent_command_)
+    {
+      if (sendSerialCommand(command))
+      {
+        last_sent_command_ = command;
+      }
+    }
+  }
+
+  std::string twistToCommand(const geometry_msgs::msg::Twist & twist) const
+  {
+    double linear_x = twist.linear.x;
+    double angular_z = twist.angular.z;
+
+    if (std::abs(linear_x) < linear_threshold_ &&
+        std::abs(angular_z) < angular_threshold_)
+    {
+      return "x";
+    }
+
+    if (std::abs(linear_x) >= std::abs(angular_z))
+    {
+      if (linear_x > linear_threshold_)
+      {
+        return "f";
+      }
+      else if (linear_x < -linear_threshold_)
+      {
+        return "b";
+      }
+    }
+    else
+    {
+      if (angular_z > angular_threshold_)
+      {
+        return "l";
+      }
+      else if (angular_z < -angular_threshold_)
+      {
+        return "r";
+      }
+    }
+
+    return "x";
+  }
+
+  bool sendSerialCommand(const std::string & command)
+  {
+    if (serial_fd_ < 0)
+    {
+      RCLCPP_ERROR(this->get_logger(), "Serial port is not open.");
+      return false;
+    }
+
+    std::string command_with_newline = command + "\n";
+
+    ssize_t bytes_written = write(
+      serial_fd_,
+      command_with_newline.c_str(),
+      command_with_newline.length()
+    );
+
+    if (bytes_written < 0)
+    {
+      RCLCPP_ERROR(this->get_logger(), "Failed to write command to serial port.");
+      return false;
+    }
+
+    RCLCPP_INFO(this->get_logger(), "Sent command to ESP32: %s", command.c_str());
+    return true;
+  }
+
   void readSerialLoop()
   {
     char buffer[256];
@@ -165,11 +276,22 @@ private:
     }
   }
 
-  void parseLine(const std::string & line)
+  void parseLine(const std::string & raw_line)
   {
+    std::string line = raw_line;
+    if (!line.empty() && line.back() == '\r')
+    {
+      line.pop_back();
+    }
+
+    if (line.empty())
+    {
+      return;
+    }
+
     RCLCPP_INFO(this->get_logger(), "ESP32: %s", line.c_str());
 
-    std::regex feedback_regex(
+    static const std::regex feedback_regex(
       R"(FEEDBACK \| LEFT ticks = (-?\d+) \| RIGHT ticks = (-?\d+))"
     );
 
@@ -207,7 +329,7 @@ private:
 int main(int argc, char ** argv)
 {
   rclcpp::init(argc, argv);
-  auto node = std::make_shared<EncoderFeedbackParserNode>();
+  auto node = std::make_shared<CmdVelEncoderBridgeNode>();
   rclcpp::spin(node);
   rclcpp::shutdown();
   return 0;

@@ -3,12 +3,13 @@
 <package format="3">
   <name>test_11</name>
   <version>0.0.0</version>
-  <description>TODO: Package description</description>
+  <description>ROS 2 test package for bridging /cmd_vel to ESP32 serial commands and publishing parsed encoder feedback.</description>
   <maintainer email="edward.bagge@aalto.fi">baggee1</maintainer>
   <license>MIT</license>
 
   <buildtool_depend>ament_cmake</buildtool_depend>
 
+  <depend>geometry_msgs</depend>
   <depend>rclcpp</depend>
   <depend>std_msgs</depend>
 
