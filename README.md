@@ -1,4 +1,4 @@
-# mobile_robot_platform
+# Mobile Robot Platform
 
 Market hardware:
 
