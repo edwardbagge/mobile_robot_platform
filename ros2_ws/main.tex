@@ -1,0 +1,341 @@
+\documentclass[12pt]{article}
+\usepackage{graphicx}         % Required for inserting images
+\usepackage{float}            % Related to images 
+\usepackage{hyperref}
+\usepackage{tabularx}
+\usepackage{array}
+\usepackage{listings}
+\usepackage{etoolbox}
+\usepackage{fvextra}
+\usepackage{titlesec}
+\titleformat{\section}
+  {\large\bfseries}
+  {\thesection}
+  {1em}
+  {}
+
+\titleformat{\subsection}
+  {\normalsize\bfseries}
+  {\thesubsection}
+  {1em}
+  {}  
+
+\usepackage[a4paper,
+  left=12mm, right=12mm,
+  top=12mm, bottom=15mm,
+  headsep=8mm, footskip=10mm
+]{geometry}
+
+\lstset{
+    basicstyle=\ttfamily\small,
+    breaklines=true,
+    frame=single
+}
+
+\DefineVerbatimEnvironment{verbatim}{Verbatim}{
+    breaklines=true,
+    breakanywhere=true,
+    fontsize=\small,
+    baselinestretch=1,
+    xleftmargin=0pt,
+    samepage=true
+}
+
+\BeforeBeginEnvironment{verbatim}{\vspace{-0.5\baselineskip}}
+\AfterEndEnvironment{verbatim}{\vspace{-0.5\baselineskip}}
+
+\title{Instructions}
+
+\begin{document}
+
+\maketitle
+\tableofcontents
+\clearpage
+\section{Testing of assembled robot}
+\subsection{Tests without RPI}
+These tests are for the ESP32, L298N, motors, encoders, level shifter, XL4015 buck converter, and LiPo battery. The Raspberry Pi and RPLIDAR are not included in these tests. Before testing, check the following:
+\begin{enumerate}
+    \item The LiPo battery is connected through a fuse and switch.
+    \item The XL4015 buck converter output has been adjusted to 5V before connecting electronics.
+    \item All GND connections share the same ground reference.
+    \item The L298N ENA and ENB jumpers are removed if ESP32 PWM controls motor speed.
+    \item The L298N logic 5V pin is powered from the XL4015 regulated 5V output.
+    \item The L298N 5V pin is not used to power the ESP32.
+    \item The wheels of the robot are lifted off the ground/table.
+\end{enumerate}
+\noindent\textbf{Verify 5V supply}
+\begin{enumerate}
+    \item Battery switch OFF.
+    \item Connect the LiPo battery.
+    \item Turn battery switch ON.
+    \item Measure voltage between the 5V WAGO and GND WAGO.
+    \item Expected result: approximately 5V.
+    \item If the voltage is not approximately 5V, stop testing.
+\end{enumerate}
+\subsubsection{Test 1: Encoder diagnostic}
+\begin{enumerate}
+    \item Upload \texttt{01\_encoder\_diagnostic.ino} to the ESP32.
+    \item Open Serial Monitor at 115200 baud.
+    \item Rotate one wheel by hand.
+    \item Expected result: encoder channels A and B for the rotated wheel should change state, and the corresponding pulse counts should increase.
+    \item Send the reset command \texttt{z} to reset pulse counts if needed.
+\end{enumerate}
+\subsubsection{Test 2: Motor direction test}
+\begin{enumerate}
+    \item Upload \texttt{02\_motor\_direction\_test.ino} to the ESP32.
+    \item Open Serial Monitor at 115200 baud.
+    \item Turn the battery switch ON.
+    \item Send the commands \texttt{lf}, \texttt{lb}, \texttt{rf}, \texttt{rb}, \texttt{f}, \texttt{b}, and \texttt{s} one at a time.
+    \item Expected result: each motor rotates in the commanded direction, and the stop command stops the motors.
+\end{enumerate}
+\clearpage
+\subsubsection{Test 3: Motor and encoder combined test}
+\begin{enumerate}
+    \item Upload \texttt{03\_motor\_encoder\_combined\_test.ino} to the ESP32.
+    \item Open Serial Monitor at 115200 baud.
+    \item Turn the battery switch ON.
+    \item Send the command \texttt{z} to reset encoder pulse counts.
+    \item Run the motor commands \texttt{lf}, \texttt{lb}, \texttt{rf}, \texttt{rb}, \texttt{f}, and \texttt{b} one at a time.
+    \item Send the command \texttt{p} to print encoder status.
+    \item Expected result: the motors rotate according to the commands, the stop command stops the motors, and the encoder pulse counts increase during motor movement.
+\end{enumerate}
+\subsubsection{Test 4: Quadrature direction test}
+\begin{enumerate}
+    \item Upload \texttt{04\_quadrature\_direction\_test.ino} to the ESP32.
+    \item Open Serial Monitor at 115200 baud.
+    \item Reset signed tick counts.
+    \item Rotate one wheel by hand in one direction.
+    \item Observe whether the signed tick count increases or decreases.
+    \item Rotate the same wheel by hand in the opposite direction.
+    \item Expected result: the signed tick count changes in the opposite direction.
+\end{enumerate}
+\subsubsection{Test 5: Speed estimation test}
+\begin{enumerate}
+    \item Upload \texttt{05\_speed\_estimation\_test.ino} to the ESP32.
+    \item Check that \texttt{TICKS\_PER\_REVOLUTION} in the code matches the encoder count used by this test.
+    \item Open Serial Monitor at 115200 baud.
+    \item Send the command \texttt{z} to reset encoder counts.
+    \item Rotate one wheel by hand slowly.
+    \item Observe the printed RPM value.
+    \item Rotate the same wheel faster.
+    \item Expected result: the RPM value increases when the wheel is rotated faster and decreases when the wheel is rotated slower or stopped.
+\end{enumerate}
+\clearpage
+\subsection{Tests with RPI}
+These tests include communication between the Raspberry Pi and ESP32. The RPLIDAR may remain disconnected unless the specific test requires it.
+Before Tests 6--8, make sure of the following:
+\begin{enumerate}
+    \item The ESP32 is connected to the Raspberry Pi using a USB cable.
+    \item On the Raspberry Pi, identify the ESP32 serial port using:
+    \begin{verbatim}
+ls /dev/ttyUSB*
+ls /dev/ttyACM*
+    \end{verbatim}
+    \item If the ESP32 appears as \texttt{/dev/ttyACM0} instead of \texttt{/dev/ttyUSB0}, use that port name in the following tests.
+\end{enumerate}
+
+\subsubsection{Test 6: Raspberry Pi serial command test}
+\begin{enumerate}
+    \item Upload \texttt{06\_rpi\_serial\_command\_test.ino} to the ESP32.
+    \item Keep the battery switch OFF, because this test does not require motor power.
+    \item Open a serial terminal at 115200 baud. For example:
+    \begin{verbatim}
+python3 -m serial.tools.miniterm /dev/ttyUSB0 115200
+    \end{verbatim}
+    \item Send the commands \texttt{p}, \texttt{s}, \texttt{l}, and \texttt{z} from the Raspberry Pi serial interface.
+    \item Expected result: the Raspberry Pi serial terminal displays the expected ESP32 replies.
+\end{enumerate}
+
+\subsubsection{Test 7: Raspberry Pi motor command test}
+\begin{enumerate}
+    \item Upload \texttt{07\_rpi\_motor\_command\_test.ino} to the ESP32.
+    \item Check that the motor driver pin definitions match the previous working motor tests.
+    \item Turn the battery switch ON.
+    \item Open a serial terminal at 115200 baud. For example:
+    \begin{verbatim}
+python3 -m serial.tools.miniterm /dev/ttyUSB0 115200
+    \end{verbatim}
+    \item Test the setup by sending the different commands from the Raspberry Pi serial interface.
+    \item Expected result: the Raspberry Pi serial terminal displays the expected ESP32 replies, and the motors move according to the received commands.
+    \item Expected safety result: each movement command stops automatically after the configured timeout.
+\end{enumerate}
+\subsubsection{Test 8: Raspberry Pi motor encoder feedback test}
+\begin{enumerate}
+    \item Upload \texttt{08\_rpi\_motor\_encoder\_feedback\_test.ino} to the ESP32.
+    \item Check that the motor driver pin definitions and encoder pin definitions match the previous working tests.
+    \item Turn the battery switch ON.
+    \item In \texttt{08\_rpi\_motor\_encoder\_feedback\_test.py}, check that the serial port matches the detected ESP32 port.
+    \item Run the Raspberry Pi test program:
+    \begin{verbatim}
+python3 08_rpi_motor_encoder_feedback_test.py
+    \end{verbatim}
+    \item Send the command \texttt{z} to reset encoder counts.
+    \item Send the command \texttt{f}.
+    \item Expected result: both motors rotate forward for a short time, encoder tick feedback is printed in the Raspberry Pi terminal, and the motors stop automatically.
+    \item Send the commands \texttt{b}, \texttt{l}, and \texttt{r} one at a time.
+    \item Expected result: the motors move according to the received command, encoder tick feedback changes during movement, and the motors stop automatically after the configured timeout.
+    \item Send the command \texttt{s}.
+    \item Expected result: the ESP32 prints motor status and current encoder counts.
+    \item Send the command \texttt{x}.
+    \item Expected result: the motors stop immediately.
+\end{enumerate}
+\clearpage
+\subsection{Tests with ROS2}
+Before Tests 9--11, make sure of the following:
+\begin{enumerate}
+    \item Upload \texttt{08\_rpi\_motor\_encoder\_feedback\_test.ino} to the ESP32.
+    \item The ESP32 is connected to the Raspberry Pi using a USB cable.
+    \item Turn the battery switch ON.
+    \item On the Raspberry Pi, identify the ESP32 serial port using:
+    \begin{verbatim}
+ls /dev/ttyUSB*
+ls /dev/ttyACM*
+    \end{verbatim}
+    \item Build the ROS2 workspace:
+    \begin{verbatim}
+cd ~/ros2_ws
+colcon build
+source install/setup.bash
+    \end{verbatim}
+\end{enumerate}
+\subsubsection{Test 9: ROS2 serial bridge test}
+\begin{enumerate}
+    \item Run the ROS2 serial bridge node:
+    \begin{verbatim}
+ros2 run test_09 robot_command_serial_bridge_test
+    \end{verbatim}
+    \item Open a second terminal and source the workspace:
+    \begin{verbatim}
+source ~/ros2_ws/install/setup.bash
+    \end{verbatim}
+    \item Send a status command through ROS2:
+    \begin{verbatim}
+ros2 topic pub /robot_command std_msgs/msg/String "data: 's'" --once
+    \end{verbatim}
+    \item Expected result: the ROS2 node sends the command to the ESP32 and prints the ESP32 status response.
+    \item Send a forward command through ROS2:
+    \begin{verbatim}
+ros2 topic pub /robot_command std_msgs/msg/String "data: 'f'" --once
+    \end{verbatim}
+    \item Expected result: the motors rotate forward for a short time, encoder feedback is printed, and the motors stop automatically.
+    \item Send a stop command through ROS2:
+    \begin{verbatim}
+ros2 topic pub /robot_command std_msgs/msg/String "data: 'x'" --once
+    \end{verbatim}
+    \item Expected result: the motors stop immediately.
+    \item Send a reset command through ROS2:
+    \begin{verbatim}
+ros2 topic pub /robot_command std_msgs/msg/String "data: 'z'" --once
+    \end{verbatim}
+    \item Expected result: the ESP32 resets the encoder counts and the ROS2 node prints the response.
+\end{enumerate}
+\subsubsection{Test 10: ROS2 cmd\_vel serial command test}
+\begin{enumerate}
+    \item Run the ROS2 \texttt{cmd\_vel} serial node:
+    \begin{verbatim}
+ros2 run test_10 cmd_vel_serial_bridge_test
+    \end{verbatim}
+    \item Open a second terminal and source the workspace:
+    \begin{verbatim}
+source ~/ros2_ws/install/setup.bash
+    \end{verbatim}
+    \item Send a forward velocity command:
+    \begin{verbatim}
+ros2 topic pub /cmd_vel geometry_msgs/msg/Twist "{linear: {x: 0.2}, angular: {z: 0.0}}" --once
+    \end{verbatim}
+    \item Expected result: the ROS2 node sends the command \texttt{f} to the ESP32, both motors rotate forward briefly, encoder feedback is printed, and the motors stop automatically.
+    \item Send a backward velocity command:
+    \begin{verbatim}
+ros2 topic pub /cmd_vel geometry_msgs/msg/Twist "{linear: {x: -0.2}, angular: {z: 0.0}}" --once
+    \end{verbatim}
+    \item Expected result: the ROS2 node sends the command \texttt{b} to the ESP32, both motors rotate backward briefly, encoder feedback is printed, and the motors stop automatically.
+    \item Send a left turn command:
+    \begin{verbatim}
+ros2 topic pub /cmd_vel geometry_msgs/msg/Twist "{linear: {x: 0.0}, angular: {z: 0.5}}" --once
+    \end{verbatim}
+    \item Expected result: the ROS2 node sends the command \texttt{l} to the ESP32, the robot performs a left turn movement briefly, encoder feedback is printed, and the motors stop automatically.
+    \item Send a right turn command:
+    \begin{verbatim}
+ros2 topic pub /cmd_vel geometry_msgs/msg/Twist "{linear: {x: 0.0}, angular: {z: -0.5}}" --once
+    \end{verbatim}
+    \item Expected result: the ROS2 node sends the command \texttt{r} to the ESP32, the robot performs a right turn movement briefly, encoder feedback is printed, and the motors stop automatically.
+    \item Send a zero velocity command:
+    \begin{verbatim}
+ros2 topic pub /cmd_vel geometry_msgs/msg/Twist "{linear: {x: 0.0}, angular: {z: 0.0}}" --once
+    \end{verbatim}
+    \item Expected result: the ROS2 node sends the command \texttt{x} to the ESP32, and the motors stop.
+\end{enumerate}
+\subsubsection{Test 11: ROS2 encoder feedback parser test with motor commands}
+\begin{enumerate}
+    \item Lift the robot so the wheels cannot touch the ground.
+    \item Run the ROS2 \texttt{cmd\_vel} encoder bridge node:
+    \begin{verbatim}
+ros2 run test_11 cmd_vel_encoder_bridge_test
+    \end{verbatim}
+    \item Open a second terminal and source the workspace:
+    \begin{verbatim}
+source ~/ros2_ws/install/setup.bash
+    \end{verbatim}
+    \item Monitor the left encoder tick topic:
+    \begin{verbatim}
+ros2 topic echo /left_encoder_ticks
+    \end{verbatim}
+    \item Open a third terminal and source the workspace:
+    \begin{verbatim}
+source ~/ros2_ws/install/setup.bash
+    \end{verbatim}
+    \item Monitor the right encoder tick topic:
+    \begin{verbatim}
+ros2 topic echo /right_encoder_ticks
+    \end{verbatim}
+    \item Open a fourth terminal and source the workspace:
+    \begin{verbatim}
+source ~/ros2_ws/install/setup.bash
+    \end{verbatim}
+    \item Send a forward velocity command:
+    \begin{verbatim}
+ros2 topic pub /cmd_vel geometry_msgs/msg/Twist "{linear: {x: 0.2}, angular: {z: 0.0}}" --once
+    \end{verbatim}
+    \item Expected result: both motors rotate forward briefly, the ESP32 prints encoder feedback, and values are published on \texttt{/left\_encoder\_ticks} and \texttt{/right\_encoder\_ticks}.
+    \item Send a backward velocity command:
+    \begin{verbatim}
+ros2 topic pub /cmd_vel geometry_msgs/msg/Twist "{linear: {x: -0.2}, angular: {z: 0.0}}" --once
+    \end{verbatim}
+    \item Expected result: both motors rotate backward briefly, and the encoder tick values change in the opposite direction.
+    \item Send a left turn velocity command:
+    \begin{verbatim}
+ros2 topic pub /cmd_vel geometry_msgs/msg/Twist "{linear: {x: 0.0}, angular: {z: 0.5}}" --once
+    \end{verbatim}
+    \item Expected result: the motors turn in opposite directions, encoder feedback changes, and parsed tick values are published.
+    \item Send a right turn velocity command:
+    \begin{verbatim}
+ros2 topic pub /cmd_vel geometry_msgs/msg/Twist "{linear: {x: 0.0}, angular: {z: -0.5}}" --once
+    \end{verbatim}
+    \item Expected result: the motors turn in opposite directions, encoder feedback changes, and parsed tick values are published.
+    \item Send a zero velocity command:
+    \begin{verbatim}
+ros2 topic pub /cmd_vel geometry_msgs/msg/Twist "{linear: {x: 0.0}, angular: {z: 0.0}}" --once
+    \end{verbatim}
+    \item Expected result: the motors stop immediately.
+\end{enumerate}
+\subsubsection{Test 12: ROS2 wheel odometry package creation}
+\begin{enumerate}
+    \item This test prepares the next development step: computing wheel odometry from encoder tick feedback.
+    \item Open a terminal and go to the ROS2 source directory:
+    \begin{verbatim}
+cd ~/ros2_ws/src
+    \end{verbatim}
+    \item Create the new ROS2 package:
+    \begin{verbatim}
+ros2 pkg create --build-type ament_cmake --license Apache-2.0 test_12 --dependencies rclcpp std_msgs nav_msgs geometry_msgs tf2 tf2_ros
+    \end{verbatim}
+    \item Build the new package:
+    \begin{verbatim}
+cd ~/ros2_ws
+colcon build --packages-select test_12
+source install/setup.bash
+    \end{verbatim}
+    \item Expected result: the package \texttt{test\_12} is created under \texttt{~/ros2\_ws/src}, and the workspace builds without errors.
+    \item Next goal: implement a wheel odometry node that subscribes to encoder tick topics and publishes odometry information.
+\end{enumerate}
+\end{document}
