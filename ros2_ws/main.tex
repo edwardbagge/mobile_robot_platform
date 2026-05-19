@@ -318,24 +318,68 @@ ros2 topic pub /cmd_vel geometry_msgs/msg/Twist "{linear: {x: 0.0}, angular: {z:
     \end{verbatim}
     \item Expected result: the motors stop immediately.
 \end{enumerate}
-\subsubsection{Test 12: ROS2 wheel odometry package creation}
+\subsubsection{Test 12: ROS2 wheel odometry test}
 \begin{enumerate}
-    \item This test prepares the next development step: computing wheel odometry from encoder tick feedback.
-    \item Open a terminal and go to the ROS2 source directory:
-    \begin{verbatim}
-cd ~/ros2_ws/src
-    \end{verbatim}
-    \item Create the new ROS2 package:
-    \begin{verbatim}
-ros2 pkg create --build-type ament_cmake --license Apache-2.0 test_12 --dependencies rclcpp std_msgs nav_msgs geometry_msgs tf2 tf2_ros
-    \end{verbatim}
-    \item Build the new package:
+    \item This test checks whether wheel encoder tick feedback can be converted into odometry information in ROS2.
+    \item Prerequisite: an odometry node must be implemented in \texttt{test\_12}. It should subscribe to \texttt{/left\_encoder\_ticks} and \texttt{/right\_encoder\_ticks}, and publish at least \texttt{/odom}. If TF is included, it may also publish the transform from \texttt{odom} to \texttt{base\_link}.
+    \item Before starting this test, complete the setup used in Tests 9--11 and make sure encoder feedback is already working correctly in ROS2.
+    \item Lift the robot so the wheels cannot touch the ground for the first checks.
+    \item Build the ROS2 workspace:
     \begin{verbatim}
 cd ~/ros2_ws
-colcon build --packages-select test_12
+colcon build
 source install/setup.bash
     \end{verbatim}
-    \item Expected result: the package \texttt{test\_12} is created under \texttt{~/ros2\_ws/src}, and the workspace builds without errors.
-    \item Next goal: implement a wheel odometry node that subscribes to encoder tick topics and publishes odometry information.
+    \item Run the encoder bridge node from Test 11:
+    \begin{verbatim}
+ros2 run test_11 cmd_vel_encoder_bridge_test
+    \end{verbatim}
+    \item Open a second terminal and source the workspace:
+    \begin{verbatim}
+source ~/ros2_ws/install/setup.bash
+    \end{verbatim}
+    \item Run the odometry node from \texttt{test\_12}:
+    \begin{verbatim}
+ros2 run test_12 wheel_odometry_test
+    \end{verbatim}
+    \item Open a third terminal and source the workspace:
+    \begin{verbatim}
+source ~/ros2_ws/install/setup.bash
+    \end{verbatim}
+    \item Monitor the odometry topic:
+    \begin{verbatim}
+ros2 topic echo /odom
+    \end{verbatim}
+    \item Open a fourth terminal and source the workspace:
+    \begin{verbatim}
+source ~/ros2_ws/install/setup.bash
+    \end{verbatim}
+    \item Send a forward velocity command:
+    \begin{verbatim}
+ros2 topic pub /cmd_vel geometry_msgs/msg/Twist "{linear: {x: 0.2}, angular: {z: 0.0}}" --once
+    \end{verbatim}
+    \item Expected result: the odometry output shows forward motion. The \texttt{x} position should increase and the linear velocity should be positive.
+    \item Send a backward velocity command:
+    \begin{verbatim}
+ros2 topic pub /cmd_vel geometry_msgs/msg/Twist "{linear: {x: -0.2}, angular: {z: 0.0}}" --once
+    \end{verbatim}
+    \item Expected result: the odometry output shows backward motion. The linear velocity should become negative, and the position change should reverse direction.
+    \item Send a left turn velocity command:
+    \begin{verbatim}
+ros2 topic pub /cmd_vel geometry_msgs/msg/Twist "{linear: {x: 0.0}, angular: {z: 0.5}}" --once
+    \end{verbatim}
+    \item Expected result: the odometry output shows a positive angular change. The robot heading should change while turning.
+    \item Send a right turn velocity command:
+    \begin{verbatim}
+ros2 topic pub /cmd_vel geometry_msgs/msg/Twist "{linear: {x: 0.0}, angular: {z: -0.5}}" --once
+    \end{verbatim}
+    \item Expected result: the odometry output shows a negative angular change.
+    \item Send a zero velocity command:
+    \begin{verbatim}
+ros2 topic pub /cmd_vel geometry_msgs/msg/Twist "{linear: {x: 0.0}, angular: {z: 0.0}}" --once
+    \end{verbatim}
+    \item Expected result: the published linear and angular velocities return close to zero.
+    \item After the lifted-wheel checks work, repeat the forward and turning tests with the robot on the floor at low speed.
+    \item Expected floor-test result: the odometry direction should match the real robot motion, even if the absolute position is still approximate.
 \end{enumerate}
 \end{document}
