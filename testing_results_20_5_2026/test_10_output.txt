@@ -1,0 +1,79 @@
+wingman@wingman-desktop:~/Documents/mobile_robot_platform/ros2_ws$ ros2 run test_10 cmd_vel_serial_bridge_test
+[INFO] [1779262230.518892485] [cmd_vel_serial_bridge_test]: Serial port opened successfully.
+[INFO] [1779262230.526786810] [cmd_vel_serial_bridge_test]: CMD_VEL serial bridge test started.
+[INFO] [1779262230.526929015] [cmd_vel_serial_bridge_test]: Listening on /cmd_vel
+[INFO] [1779262230.526984811] [cmd_vel_serial_bridge_test]: Serial port: /dev/ttyUSB0
+[INFO] [1779262230.527014700] [cmd_vel_serial_bridge_test]: Suppress repeated commands: true
+[INFO] [1779262338.224913908] [cmd_vel_serial_bridge_test]: ESP32: ets Jul 29 2019 12:21:46
+[INFO] [1779262338.225024667] [cmd_vel_serial_bridge_test]: ESP32: rst:0x1 (POWERON_RESET),boot:0x13 (SPI_FAST_FLASH_BOOT)
+[INFO] [1779262338.225060816] [cmd_vel_serial_bridge_test]: ESP32: configsip: 0, SPIWP:0xee
+[INFO] [1779262338.225086853] [cmd_vel_serial_bridge_test]: ESP32: clk_drv:0x00,q_drv:0x00,d_drv:0x00,cs0_drv:0x00,hd_drv:0x00,wp_drv:0x00
+[INFO] [1779262338.225119297] [cmd_vel_serial_bridge_test]: ESP32: mode:DIO, clock div:1
+[INFO] [1779262338.225142353] [cmd_vel_serial_bridge_test]: ESP32: load:0x3fff0030,len:4640
+[INFO] [1779262338.235355388] [cmd_vel_serial_bridge_test]: ESP32: load:0x40078000,len:15620
+[INFO] [1779262338.235486203] [cmd_vel_serial_bridge_test]: ESP32: ho 0 tail 12 room 4
+[INFO] [1779262338.235521481] [cmd_vel_serial_bridge_test]: ESP32: load:0x40080400,len:3164
+[INFO] [1779262338.235553703] [cmd_vel_serial_bridge_test]: ESP32: entry 0x4008059c
+[INFO] [1779262340.391362457] [cmd_vel_serial_bridge_test]: ESP32: Motors stopped.
+[INFO] [1779262340.391452457] [cmd_vel_serial_bridge_test]: ESP32: FEEDBACK | LEFT ticks = 0 | RIGHT ticks = 0
+[INFO] [1779262340.391482124] [cmd_vel_serial_bridge_test]: ESP32: === RPI MOTOR ENCODER FEEDBACK TEST ===
+[INFO] [1779262340.391506716] [cmd_vel_serial_bridge_test]: ESP32: ESP32 ready.
+[INFO] [1779262340.391531494] [cmd_vel_serial_bridge_test]: ESP32: Keep robot lifted from ground for first test.
+[INFO] [1779262340.391563791] [cmd_vel_serial_bridge_test]: ESP32: Commands:
+[INFO] [1779262340.391589476] [cmd_vel_serial_bridge_test]: ESP32: f = forward
+[INFO] [1779262340.391612476] [cmd_vel_serial_bridge_test]: ESP32: b = backward
+[INFO] [1779262340.391641031] [cmd_vel_serial_bridge_test]: ESP32: l = turn left
+[INFO] [1779262340.391703624] [cmd_vel_serial_bridge_test]: ESP32: r = turn right
+[INFO] [1779262340.391731124] [cmd_vel_serial_bridge_test]: ESP32: x = stop
+[INFO] [1779262340.401859715] [cmd_vel_serial_bridge_test]: ESP32: s = status
+[INFO] [1779262340.401969289] [cmd_vel_serial_bridge_test]: ESP32: z = reset encoder counts
+[INFO] [1779262421.593176722] [cmd_vel_serial_bridge_test]: Sent command to ESP32: f
+[INFO] [1779262421.604636925] [cmd_vel_serial_bridge_test]: ESP32: Received command: f
+[INFO] [1779262421.604773038] [cmd_vel_serial_bridge_test]: ESP32: Motor command: forward
+[INFO] [1779262421.604809779] [cmd_vel_serial_bridge_test]: ESP32: FEEDBACK | LEFT ticks = -1 | RIGHT ticks = 0
+[INFO] [1779262421.856801529] [cmd_vel_serial_bridge_test]: ESP32: FEEDBACK | LEFT ticks = 80 | RIGHT ticks = -81
+[INFO] [1779262422.098708087] [cmd_vel_serial_bridge_test]: ESP32: FEEDBACK | LEFT ticks = 263 | RIGHT ticks = -267
+[INFO] [1779262422.350708716] [cmd_vel_serial_bridge_test]: ESP32: FEEDBACK | LEFT ticks = 494 | RIGHT ticks = -507
+[INFO] [1779262422.612729495] [cmd_vel_serial_bridge_test]: ESP32: FEEDBACK | LEFT ticks = 751 | RIGHT ticks = -776
+[INFO] [1779262422.612820274] [cmd_vel_serial_bridge_test]: ESP32: Motor timeout reached.
+[INFO] [1779262422.612847589] [cmd_vel_serial_bridge_test]: ESP32: Motors stopped.
+[INFO] [1779262422.612894034] [cmd_vel_serial_bridge_test]: ESP32: FEEDBACK | LEFT ticks = 750 | RIGHT ticks = -776
+[INFO] [1779262438.523230822] [cmd_vel_serial_bridge_test]: Sent command to ESP32: b
+[INFO] [1779262438.534220124] [cmd_vel_serial_bridge_test]: ESP32: Received command: b
+[INFO] [1779262438.534642073] [cmd_vel_serial_bridge_test]: ESP32: Motor command: backward
+[INFO] [1779262438.534798148] [cmd_vel_serial_bridge_test]: ESP32: FEEDBACK | LEFT ticks = 1114 | RIGHT ticks = -1159
+[INFO] [1779262438.786770925] [cmd_vel_serial_bridge_test]: ESP32: FEEDBACK | LEFT ticks = 966 | RIGHT ticks = -1160
+[INFO] [1779262439.038794626] [cmd_vel_serial_bridge_test]: ESP32: FEEDBACK | LEFT ticks = 613 | RIGHT ticks = -1160
+[INFO] [1779262439.280646638] [cmd_vel_serial_bridge_test]: ESP32: FEEDBACK | LEFT ticks = 156 | RIGHT ticks = -1160
+[INFO] [1779262439.542713642] [cmd_vel_serial_bridge_test]: ESP32: FEEDBACK | LEFT ticks = -351 | RIGHT ticks = -1159
+[INFO] [1779262439.542800198] [cmd_vel_serial_bridge_test]: ESP32: Motor timeout reached.
+[INFO] [1779262439.542826143] [cmd_vel_serial_bridge_test]: ESP32: Motors stopped.
+[INFO] [1779262439.542848792] [cmd_vel_serial_bridge_test]: ESP32: FEEDBACK | LEFT ticks = -352 | RIGHT ticks = -1160
+[INFO] [1779262465.620894185] [cmd_vel_serial_bridge_test]: Sent command to ESP32: l
+[INFO] [1779262465.635513568] [cmd_vel_serial_bridge_test]: ESP32: Received command: l
+[INFO] [1779262465.635616124] [cmd_vel_serial_bridge_test]: ESP32: Motor command: turn left
+[INFO] [1779262465.635648569] [cmd_vel_serial_bridge_test]: ESP32: FEEDBACK | LEFT ticks = -1056 | RIGHT ticks = -1159
+[INFO] [1779262465.877751259] [cmd_vel_serial_bridge_test]: ESP32: FEEDBACK | LEFT ticks = -1215 | RIGHT ticks = -1242
+[INFO] [1779262466.129825801] [cmd_vel_serial_bridge_test]: ESP32: FEEDBACK | LEFT ticks = -1588 | RIGHT ticks = -1431
+[INFO] [1779262466.381782005] [cmd_vel_serial_bridge_test]: ESP32: FEEDBACK | LEFT ticks = -2059 | RIGHT ticks = -1673
+[INFO] [1779262466.643760861] [cmd_vel_serial_bridge_test]: ESP32: FEEDBACK | LEFT ticks = -2581 | RIGHT ticks = -1944
+[INFO] [1779262466.643852306] [cmd_vel_serial_bridge_test]: ESP32: Motor timeout reached.
+[INFO] [1779262466.643878418] [cmd_vel_serial_bridge_test]: ESP32: Motors stopped.
+[INFO] [1779262466.643902270] [cmd_vel_serial_bridge_test]: ESP32: FEEDBACK | LEFT ticks = -2582 | RIGHT ticks = -1943
+[INFO] [1779262477.560501448] [cmd_vel_serial_bridge_test]: Sent command to ESP32: r
+[INFO] [1779262477.580925491] [cmd_vel_serial_bridge_test]: ESP32: Received command: r
+[INFO] [1779262477.581002288] [cmd_vel_serial_bridge_test]: ESP32: Motor command: turn right
+[INFO] [1779262477.581023381] [cmd_vel_serial_bridge_test]: ESP32: FEEDBACK | LEFT ticks = -3313 | RIGHT ticks = -2330
+[INFO] [1779262477.822820199] [cmd_vel_serial_bridge_test]: ESP32: FEEDBACK | LEFT ticks = -3237 | RIGHT ticks = -2331
+[INFO] [1779262478.074891092] [cmd_vel_serial_bridge_test]: ESP32: FEEDBACK | LEFT ticks = -3051 | RIGHT ticks = -2330
+[INFO] [1779262478.316697403] [cmd_vel_serial_bridge_test]: ESP32: FEEDBACK | LEFT ticks = -2813 | RIGHT ticks = -2330
+[INFO] [1779262478.578665568] [cmd_vel_serial_bridge_test]: ESP32: FEEDBACK | LEFT ticks = -2547 | RIGHT ticks = -2331
+[INFO] [1779262478.578758773] [cmd_vel_serial_bridge_test]: ESP32: Motor timeout reached.
+[INFO] [1779262478.578786977] [cmd_vel_serial_bridge_test]: ESP32: Motors stopped.
+[INFO] [1779262478.578810181] [cmd_vel_serial_bridge_test]: ESP32: FEEDBACK | LEFT ticks = -2547 | RIGHT ticks = -2330
+[INFO] [1779262492.514451948] [cmd_vel_serial_bridge_test]: Sent command to ESP32: x
+[INFO] [1779262492.527252136] [cmd_vel_serial_bridge_test]: ESP32: Received command: x
+[INFO] [1779262492.527394341] [cmd_vel_serial_bridge_test]: ESP32: Motors stopped.
+[INFO] [1779262492.527423045] [cmd_vel_serial_bridge_test]: ESP32: FEEDBACK | LEFT ticks = -2167 | RIGHT ticks = -2331
+
+
