@@ -1,0 +1,74 @@
+TEST SUMMARY
+Date reviewed: 2026-05-20
+
+test_09
+Result: SUCCESS
+Purpose:
+- ROS 2 bridge from /robot_command string messages to ESP32 serial motor commands.
+
+What worked:
+- Package built successfully.
+- Serial port /dev/ttyUSB0 opened successfully.
+- Commands s, f, x, and z were sent from ROS 2 and received by the ESP32.
+- ESP32 reported status correctly.
+- Forward command produced encoder feedback.
+- Motor timeout stop worked.
+- Encoder reset worked.
+
+Notes:
+- ESP32 reboot text appeared at startup, but this was expected because the ESP32 reset button was pressed physically at the start of the test.
+- During forward motion, left ticks were positive and right ticks were negative. This may be normal depending on the encoder sign convention.
+
+
+test_10
+Result: PARTIAL SUCCESS
+Purpose:
+- ROS 2 bridge from /cmd_vel Twist messages to ESP32 serial motor commands.
+
+What worked:
+- Serial port /dev/ttyUSB0 opened successfully.
+- /cmd_vel commands were mapped and sent correctly:
+  - forward -> f
+  - backward -> b
+  - left turn -> l
+  - right turn -> r
+  - stop -> x
+- ESP32 received each command and reported the matching motor action.
+
+Issues observed:
+- Forward motion looked plausible and both encoder values changed.
+- Backward motion was suspicious: left encoder changed significantly, but right encoder stayed almost fixed near -1160.
+- Right turn was also suspicious: left encoder changed significantly, but right encoder stayed almost fixed near -2330.
+
+Conclusion:
+- The /cmd_vel to serial bridge worked.
+- The test did not cleanly validate balanced drivetrain or right encoder behavior across all motions.
+
+
+test_11
+Result: PARTIAL SUCCESS
+Purpose:
+- Combined /cmd_vel to ESP32 serial bridge plus parsing and publishing encoder feedback to ROS topics.
+
+What worked:
+- Serial port /dev/ttyUSB0 opened successfully.
+- The node sent the expected motor commands from /cmd_vel input.
+- Encoder feedback lines from the ESP32 were parsed successfully.
+- Parsed values were published to:
+  - /left_encoder_ticks
+  - /right_encoder_ticks
+- Topic echoes matched the parsed values from the general log.
+
+Issues observed:
+- The right encoder showed little or no change during backward motion while the left encoder changed substantially.
+- The right encoder also changed very little during right-turn motion while the left encoder changed substantially.
+
+Conclusion:
+- ROS integration worked: command bridging, serial parsing, and encoder topic publishing were successful.
+- The test does not show clean, correct encoder behavior for both wheels under all commanded motions.
+
+
+Overall summary
+- test_09: PASS
+- test_10: PASS for bridge functionality, but FAIL as a clean drivetrain/encoder validation
+- test_11: PASS for ROS integration and encoder topic publishing, but FAIL as a clean two-wheel encoder validation
