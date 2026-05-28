@@ -1,0 +1,10 @@
+wingman@wingman-desktop:~/Documents/mobile_robot_platform/ros2_ws$ ros2 run test_12 wheel_odometry_test --ros-args -p publish_rate_hz:=2.0
+[INFO] [1779963550.529407837] [wheel_odometry_test]: Wheel odometry test started.
+[INFO] [1779963550.529562006] [wheel_odometry_test]: Subscribing to /left_encoder_ticks and /right_encoder_ticks
+[INFO] [1779963550.529592470] [wheel_odometry_test]: Publishing /odom
+[INFO] [1779963550.529613822] [wheel_odometry_test]: ticks_per_revolution = 700.000
+[INFO] [1779963550.529643100] [wheel_odometry_test]: wheel_radius_m = 0.030
+[INFO] [1779963550.529668897] [wheel_odometry_test]: wheel_base_m = 0.160
+[INFO] [1779963550.529694712] [wheel_odometry_test]: publish_tf = true
+
+

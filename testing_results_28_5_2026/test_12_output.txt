@@ -1,0 +1,120 @@
+wingman@wingman-desktop:~/Documents/mobile_robot_platform/ros2_ws$ ros2 run test_11 cmd_vel_encoder_bridge_test
+[INFO] [1779963495.312022593] [cmd_vel_encoder_bridge_test]: Serial port opened successfully.
+[INFO] [1779963495.312289357] [cmd_vel_encoder_bridge_test]: CMD_VEL encoder bridge test started.
+[INFO] [1779963495.312332321] [cmd_vel_encoder_bridge_test]: Listening on /cmd_vel
+[INFO] [1779963495.312356266] [cmd_vel_encoder_bridge_test]: Publishing /left_encoder_ticks and /right_encoder_ticks
+[INFO] [1779963495.312382915] [cmd_vel_encoder_bridge_test]: Serial port: /dev/ttyUSB0
+[INFO] [1779963495.312408767] [cmd_vel_encoder_bridge_test]: Suppress repeated commands: false
+[INFO] [1779963656.496824029] [cmd_vel_encoder_bridge_test]: ESP32: ets Jul 29 2019 12:21:46
+[INFO] [1779963656.497655855] [cmd_vel_encoder_bridge_test]: ESP32: rst:0x1 (POWERON_RESET),boot:0x13 (SPI_FAST_FLASH_BOOT)
+[INFO] [1779963656.497833598] [cmd_vel_encoder_bridge_test]: ESP32: configsip: 0, SPIWP:0xee
+[INFO] [1779963656.497946099] [cmd_vel_encoder_bridge_test]: ESP32: clk_drv:0x00,q_drv:0x00,d_drv:0x00,cs0_drv:0x00,hd_drv:0x00,wp_drv:0x00
+[INFO] [1779963656.498052545] [cmd_vel_encoder_bridge_test]: ESP32: mode:DIO, clock div:1
+[INFO] [1779963656.498121676] [cmd_vel_encoder_bridge_test]: ESP32: load:0x3fff0030,len:4640
+[INFO] [1779963656.508270012] [cmd_vel_encoder_bridge_test]: ESP32: load:0x40078000,len:15620
+[INFO] [1779963656.508410699] [cmd_vel_encoder_bridge_test]: ESP32: ho 0 tail 12 room 4
+[INFO] [1779963656.508451866] [cmd_vel_encoder_bridge_test]: ESP32: load:0x40080400,len:3164
+[INFO] [1779963656.508491811] [cmd_vel_encoder_bridge_test]: ESP32: entry 0x4008059c
+[INFO] [1779963658.672802323] [cmd_vel_encoder_bridge_test]: ESP32: Motors stopped.
+[INFO] [1779963658.672913472] [cmd_vel_encoder_bridge_test]: ESP32: FEEDBACK | LEFT ticks = 0 | RIGHT ticks = 0
+[INFO] [1779963658.673081475] [cmd_vel_encoder_bridge_test]: Parsed encoder ticks -> LEFT: 0, RIGHT: 0
+[INFO] [1779963658.673123642] [cmd_vel_encoder_bridge_test]: ESP32: === RPI MOTOR ENCODER FEEDBACK TEST ===
+[INFO] [1779963658.673187717] [cmd_vel_encoder_bridge_test]: ESP32: ESP32 ready.
+[INFO] [1779963658.673230513] [cmd_vel_encoder_bridge_test]: ESP32: Keep robot lifted from ground for first test.
+[INFO] [1779963658.673309292] [cmd_vel_encoder_bridge_test]: ESP32: Commands:
+[INFO] [1779963658.673350422] [cmd_vel_encoder_bridge_test]: ESP32: f = forward
+[INFO] [1779963658.673385164] [cmd_vel_encoder_bridge_test]: ESP32: b = backward
+[INFO] [1779963658.673419257] [cmd_vel_encoder_bridge_test]: ESP32: l = turn left
+[INFO] [1779963658.673454609] [cmd_vel_encoder_bridge_test]: ESP32: r = turn right
+[INFO] [1779963658.673492406] [cmd_vel_encoder_bridge_test]: ESP32: x = stop
+[INFO] [1779963658.684058395] [cmd_vel_encoder_bridge_test]: ESP32: s = status
+[INFO] [1779963658.684429289] [cmd_vel_encoder_bridge_test]: ESP32: z = reset encoder counts
+[INFO] [1779963672.517665799] [cmd_vel_encoder_bridge_test]: Sent command to ESP32: f
+[INFO] [1779963672.530069956] [cmd_vel_encoder_bridge_test]: ESP32: Received command: f
+[INFO] [1779963672.530332441] [cmd_vel_encoder_bridge_test]: ESP32: Motor command: forward
+[INFO] [1779963672.530445961] [cmd_vel_encoder_bridge_test]: ESP32: FEEDBACK | LEFT ticks = 0 | RIGHT ticks = 0
+[INFO] [1779963672.530776650] [cmd_vel_encoder_bridge_test]: Parsed encoder ticks -> LEFT: 0, RIGHT: 0
+[INFO] [1779963672.782472895] [cmd_vel_encoder_bridge_test]: ESP32: FEEDBACK | LEFT ticks = 239 | RIGHT ticks = 245
+[INFO] [1779963672.782671545] [cmd_vel_encoder_bridge_test]: Parsed encoder ticks -> LEFT: 239, RIGHT: 245
+[INFO] [1779963673.024653074] [cmd_vel_encoder_bridge_test]: ESP32: FEEDBACK | LEFT ticks = 672 | RIGHT ticks = 685
+[INFO] [1779963673.024888391] [cmd_vel_encoder_bridge_test]: Parsed encoder ticks -> LEFT: 672, RIGHT: 685
+[INFO] [1779963673.276596593] [cmd_vel_encoder_bridge_test]: ESP32: FEEDBACK | LEFT ticks = 1154 | RIGHT ticks = 1172
+[INFO] [1779963673.276834818] [cmd_vel_encoder_bridge_test]: Parsed encoder ticks -> LEFT: 1154, RIGHT: 1172
+[INFO] [1779963673.538661833] [cmd_vel_encoder_bridge_test]: ESP32: FEEDBACK | LEFT ticks = 1649 | RIGHT ticks = 1671
+[INFO] [1779963673.538890891] [cmd_vel_encoder_bridge_test]: Parsed encoder ticks -> LEFT: 1649, RIGHT: 1671
+[INFO] [1779963673.538927595] [cmd_vel_encoder_bridge_test]: ESP32: Motor timeout reached.
+[INFO] [1779963673.538978651] [cmd_vel_encoder_bridge_test]: ESP32: Motors stopped.
+[INFO] [1779963673.539022467] [cmd_vel_encoder_bridge_test]: ESP32: FEEDBACK | LEFT ticks = 1649 | RIGHT ticks = 1671
+[INFO] [1779963673.539163265] [cmd_vel_encoder_bridge_test]: Parsed encoder ticks -> LEFT: 1649, RIGHT: 1671
+[INFO] [1779963711.985506708] [cmd_vel_encoder_bridge_test]: Sent command to ESP32: b
+[INFO] [1779963711.997300402] [cmd_vel_encoder_bridge_test]: ESP32: Received command: b
+[INFO] [1779963711.997499127] [cmd_vel_encoder_bridge_test]: ESP32: Motor command: backward
+[INFO] [1779963711.997536627] [cmd_vel_encoder_bridge_test]: ESP32: FEEDBACK | LEFT ticks = 2861 | RIGHT ticks = 2834
+[INFO] [1779963711.997712833] [cmd_vel_encoder_bridge_test]: Parsed encoder ticks -> LEFT: 2861, RIGHT: 2834
+[INFO] [1779963712.249538457] [cmd_vel_encoder_bridge_test]: ESP32: FEEDBACK | LEFT ticks = 2394 | RIGHT ticks = 2353
+[INFO] [1779963712.249849146] [cmd_vel_encoder_bridge_test]: Parsed encoder ticks -> LEFT: 2394, RIGHT: 2353
+[INFO] [1779963712.491657375] [cmd_vel_encoder_bridge_test]: ESP32: FEEDBACK | LEFT ticks = 1508 | RIGHT ticks = 1489
+[INFO] [1779963712.491888915] [cmd_vel_encoder_bridge_test]: Parsed encoder ticks -> LEFT: 1508, RIGHT: 1489
+[INFO] [1779963712.743675484] [cmd_vel_encoder_bridge_test]: ESP32: FEEDBACK | LEFT ticks = 515 | RIGHT ticks = 533
+[INFO] [1779963712.743892209] [cmd_vel_encoder_bridge_test]: Parsed encoder ticks -> LEFT: 515, RIGHT: 533
+[INFO] [1779963712.995599258] [cmd_vel_encoder_bridge_test]: ESP32: Motor timeout reached.
+[INFO] [1779963712.995712870] [cmd_vel_encoder_bridge_test]: ESP32: Motors stopped.
+[INFO] [1779963712.995769352] [cmd_vel_encoder_bridge_test]: ESP32: FEEDBACK | LEFT ticks = -511 | RIGHT ticks = -448
+[INFO] [1779963712.995902706] [cmd_vel_encoder_bridge_test]: Parsed encoder ticks -> LEFT: -511, RIGHT: -448
+[INFO] [1779963735.954311775] [cmd_vel_encoder_bridge_test]: Sent command to ESP32: l
+[INFO] [1779963735.971287504] [cmd_vel_encoder_bridge_test]: ESP32: Received command: l
+[INFO] [1779963735.971699138] [cmd_vel_encoder_bridge_test]: ESP32: Motor command: turn left
+[INFO] [1779963735.971799398] [cmd_vel_encoder_bridge_test]: ESP32: FEEDBACK | LEFT ticks = -2983 | RIGHT ticks = -2738
+[INFO] [1779963735.972026290] [cmd_vel_encoder_bridge_test]: Parsed encoder ticks -> LEFT: -2983, RIGHT: -2738
+[INFO] [1779963736.214097719] [cmd_vel_encoder_bridge_test]: ESP32: FEEDBACK | LEFT ticks = -3460 | RIGHT ticks = -2493
+[INFO] [1779963736.214383278] [cmd_vel_encoder_bridge_test]: Parsed encoder ticks -> LEFT: -3460, RIGHT: -2493
+[INFO] [1779963736.466547728] [cmd_vel_encoder_bridge_test]: ESP32: FEEDBACK | LEFT ticks = -4347 | RIGHT ticks = -2053
+[INFO] [1779963736.466783027] [cmd_vel_encoder_bridge_test]: Parsed encoder ticks -> LEFT: -4347, RIGHT: -2053
+[INFO] [1779963736.718649288] [cmd_vel_encoder_bridge_test]: ESP32: FEEDBACK | LEFT ticks = -5341 | RIGHT ticks = -1566
+[INFO] [1779963736.718890105] [cmd_vel_encoder_bridge_test]: Parsed encoder ticks -> LEFT: -5341, RIGHT: -1566
+[INFO] [1779963736.970831867] [cmd_vel_encoder_bridge_test]: ESP32: FEEDBACK | LEFT ticks = -6367 | RIGHT ticks = -1066
+[INFO] [1779963736.971065314] [cmd_vel_encoder_bridge_test]: Parsed encoder ticks -> LEFT: -6367, RIGHT: -1066
+[INFO] [1779963736.971107241] [cmd_vel_encoder_bridge_test]: ESP32: Motor timeout reached.
+[INFO] [1779963736.971157389] [cmd_vel_encoder_bridge_test]: ESP32: Motors stopped.
+[INFO] [1779963736.971203371] [cmd_vel_encoder_bridge_test]: ESP32: FEEDBACK | LEFT ticks = -6368 | RIGHT ticks = -1065
+[INFO] [1779963736.971307206] [cmd_vel_encoder_bridge_test]: Parsed encoder ticks -> LEFT: -6368, RIGHT: -1065
+[INFO] [1779963748.020519505] [cmd_vel_encoder_bridge_test]: Sent command to ESP32: r
+[INFO] [1779963748.035872693] [cmd_vel_encoder_bridge_test]: ESP32: Received command: r
+[INFO] [1779963748.036081251] [cmd_vel_encoder_bridge_test]: ESP32: Motor command: turn right
+[INFO] [1779963748.036187974] [cmd_vel_encoder_bridge_test]: ESP32: FEEDBACK | LEFT ticks = -8864 | RIGHT ticks = 103
+[INFO] [1779963748.037171170] [cmd_vel_encoder_bridge_test]: Parsed encoder ticks -> LEFT: -8864, RIGHT: 103
+[INFO] [1779963748.279274507] [cmd_vel_encoder_bridge_test]: ESP32: FEEDBACK | LEFT ticks = -8624 | RIGHT ticks = -382
+[INFO] [1779963748.279548992] [cmd_vel_encoder_bridge_test]: Parsed encoder ticks -> LEFT: -8624, RIGHT: -382
+[INFO] [1779963748.531606957] [cmd_vel_encoder_bridge_test]: ESP32: FEEDBACK | LEFT ticks = -8191 | RIGHT ticks = -1248
+[INFO] [1779963748.532441596] [cmd_vel_encoder_bridge_test]: Parsed encoder ticks -> LEFT: -8191, RIGHT: -1248
+[INFO] [1779963748.784281040] [cmd_vel_encoder_bridge_test]: ESP32: FEEDBACK | LEFT ticks = -7709 | RIGHT ticks = -2206
+[INFO] [1779963748.784490413] [cmd_vel_encoder_bridge_test]: Parsed encoder ticks -> LEFT: -7709, RIGHT: -2206
+[INFO] [1779963749.036452654] [cmd_vel_encoder_bridge_test]: ESP32: FEEDBACK | LEFT ticks = -7212 | RIGHT ticks = -3190
+[INFO] [1779963749.036651712] [cmd_vel_encoder_bridge_test]: Parsed encoder ticks -> LEFT: -7212, RIGHT: -3190
+[INFO] [1779963749.036689527] [cmd_vel_encoder_bridge_test]: ESP32: Motor timeout reached.
+[INFO] [1779963749.036757639] [cmd_vel_encoder_bridge_test]: ESP32: Motors stopped.
+[INFO] [1779963749.036802362] [cmd_vel_encoder_bridge_test]: ESP32: FEEDBACK | LEFT ticks = -7212 | RIGHT ticks = -3191
+[INFO] [1779963749.036894215] [cmd_vel_encoder_bridge_test]: Parsed encoder ticks -> LEFT: -7212, RIGHT: -3191
+[INFO] [1779963762.995108682] [cmd_vel_encoder_bridge_test]: Sent command to ESP32: x
+[INFO] [1779963763.010976001] [cmd_vel_encoder_bridge_test]: ESP32: Received command: x
+[INFO] [1779963763.011082373] [cmd_vel_encoder_bridge_test]: ESP32: Motors stopped.
+[INFO] [1779963763.011116058] [cmd_vel_encoder_bridge_test]: ESP32: FEEDBACK | LEFT ticks = -5987 | RIGHT ticks = -5502
+[INFO] [1779963763.011239874] [cmd_vel_encoder_bridge_test]: Parsed encoder ticks -> LEFT: -5987, RIGHT: -5502
+[INFO] [1779963771.722790631] [cmd_vel_encoder_bridge_test]: Sent command to ESP32: f
+[INFO] [1779963771.740939138] [cmd_vel_encoder_bridge_test]: ESP32: Received command: f
+[INFO] [1779963771.741138937] [cmd_vel_encoder_bridge_test]: ESP32: Motor command: forward
+[INFO] [1779963771.741169382] [cmd_vel_encoder_bridge_test]: ESP32: FEEDBACK | LEFT ticks = -5987 | RIGHT ticks = -5502
+[INFO] [1779963771.741328624] [cmd_vel_encoder_bridge_test]: Parsed encoder ticks -> LEFT: -5987, RIGHT: -5502
+[INFO] [1779963771.983157915] [cmd_vel_encoder_bridge_test]: ESP32: FEEDBACK | LEFT ticks = -5746 | RIGHT ticks = -5256
+[INFO] [1779963771.983429714] [cmd_vel_encoder_bridge_test]: Parsed encoder ticks -> LEFT: -5746, RIGHT: -5256
+[INFO] [1779963772.235443165] [cmd_vel_encoder_bridge_test]: ESP32: FEEDBACK | LEFT ticks = -5311 | RIGHT ticks = -4814
+[INFO] [1779963772.235673037] [cmd_vel_encoder_bridge_test]: Parsed encoder ticks -> LEFT: -5311, RIGHT: -4814
+[INFO] [1779963772.487497393] [cmd_vel_encoder_bridge_test]: ESP32: FEEDBACK | LEFT ticks = -4827 | RIGHT ticks = -4326
+[INFO] [1779963772.487727321] [cmd_vel_encoder_bridge_test]: Parsed encoder ticks -> LEFT: -4827, RIGHT: -4326
+[INFO] [1779963772.739556696] [cmd_vel_encoder_bridge_test]: ESP32: FEEDBACK | LEFT ticks = -4330 | RIGHT ticks = -3825
+[INFO] [1779963772.739776494] [cmd_vel_encoder_bridge_test]: Parsed encoder ticks -> LEFT: -4330, RIGHT: -3825
+[INFO] [1779963772.739819402] [cmd_vel_encoder_bridge_test]: ESP32: Motor timeout reached.
+[INFO] [1779963772.739862995] [cmd_vel_encoder_bridge_test]: ESP32: Motors stopped.
+[INFO] [1779963772.739901292] [cmd_vel_encoder_bridge_test]: ESP32: FEEDBACK | LEFT ticks = -4329 | RIGHT ticks = -3825
+[INFO] [1779963772.740003386] [cmd_vel_encoder_bridge_test]: Parsed encoder ticks -> LEFT: -4329, RIGHT: -3825
+

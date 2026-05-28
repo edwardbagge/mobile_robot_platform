@@ -1,0 +1,124 @@
+wingman@wingman-desktop:~$ cd Documents
+wingman@wingman-desktop:~/Documents$ cd mobile_robot_platform
+wingman@wingman-desktop:~/Documents/mobile_robot_platform$ cd testing
+wingman@wingman-desktop:~/Documents/mobile_robot_platform/testing$ ls
+with_rpi  without_rpi
+wingman@wingman-desktop:~/Documents/mobile_robot_platform/testing$ cd with_rpi
+wingman@wingman-desktop:~/Documents/mobile_robot_platform/testing/with_rpi$ ls
+06_rpi_serial_command_test.ino  08_rpi_motor_encoder_feedback_test.ino
+07_rpi_motor_command_test.ino   08_rpi_motor_encoder_feedback_test.py
+wingman@wingman-desktop:~/Documents/mobile_robot_platform/testing/with_rpi$ python3 08_rpi_motor_encoder_feedback_test.py
+=== RPI MOTOR ENCODER FEEDBACK TEST ===
+Opening serial port: /dev/ttyUSB0
+
+Commands:
+f = forward
+b = backward
+l = turn left
+r = turn right
+x = stop
+s = status
+z = reset encoder counts
+q = quit
+
+Send command: Received command: y
+Unknown command.
+ets Jul 29 2019 12:21:46
+rst:0x1 (POWERON_RESET),boot:0x13 (SPI_FAST_FLASH_BOOT)
+configsip: 0, SPIWP:0xee
+clk_drv:0x00,q_drv:0x00,d_drv:0x00,cs0_drv:0x00,hd_drv:0x00,wp_drv:0x00
+mode:DIO, clock div:1
+load:0x3fff0030,len:4640
+load:0x40078000,len:15620
+ho 0 tail 12 room 4
+load:0x40080400,len:3164
+entry 0x4008059c
+Motors stopped.
+FEEDBACK | LEFT ticks = 0 | RIGHT ticks = 0
+=== RPI MOTOR ENCODER FEEDBACK TEST ===
+ESP32 ready.
+Keep robot lifted from ground for first test.
+Commands:
+f = forward
+b = backward
+l = turn left
+r = turn right
+x = stop
+s = status
+z = reset encoder counts
+f
+Send command: Received command: f
+Motor command: forward
+FEEDBACK | LEFT ticks = 0 | RIGHT ticks = 0
+FEEDBACK | LEFT ticks = 239 | RIGHT ticks = 246
+FEEDBACK | LEFT ticks = 670 | RIGHT ticks = 685
+FEEDBACK | LEFT ticks = 1150 | RIGHT ticks = 1172
+FEEDBACK | LEFT ticks = 1644 | RIGHT ticks = 1670
+Motor timeout reached.
+Motors stopped.
+FEEDBACK | LEFT ticks = 1645 | RIGHT ticks = 1670
+b
+Send command: Received command: b
+Motor command: backward
+FEEDBACK | LEFT ticks = 2835 | RIGHT ticks = 2818
+FEEDBACK | LEFT ticks = 2360 | RIGHT ticks = 2336
+FEEDBACK | LEFT ticks = 1474 | RIGHT ticks = 1475
+FEEDBACK | LEFT ticks = 483 | RIGHT ticks = 524
+FEEDBACK | LEFT ticks = -539 | RIGHT ticks = -452
+Motor timeout reached.
+Motors stopped.
+FEEDBACK | LEFT ticks = -540 | RIGHT ticks = -453
+l
+Send command: Received command: l
+Motor command: turn left
+FEEDBACK | LEFT ticks = -2984 | RIGHT ticks = -2681
+FEEDBACK | LEFT ticks = -3456 | RIGHT ticks = -2434
+FEEDBACK | LEFT ticks = -4342 | RIGHT ticks = -1994
+FEEDBACK | LEFT ticks = -5332 | RIGHT ticks = -1508
+FEEDBACK | LEFT ticks = -6352 | RIGHT ticks = -1008
+Motor timeout reached.
+Motors stopped.
+FEEDBACK | LEFT ticks = -6353 | RIGHT ticks = -1008
+r
+Send command: Received command: r
+Motor command: turn right
+FEEDBACK | LEFT ticks = -8800 | RIGHT ticks = 140
+FEEDBACK | LEFT ticks = -8561 | RIGHT ticks = -347
+FEEDBACK | LEFT ticks = -8127 | RIGHT ticks = -1212
+FEEDBACK | LEFT ticks = -7647 | RIGHT ticks = -2166
+FEEDBACK | LEFT ticks = -7152 | RIGHT ticks = -3145
+Motor timeout reached.
+Motors stopped.
+FEEDBACK | LEFT ticks = -7152 | RIGHT ticks = -3145
+f
+Send command: Received command: f
+Motor command: forward
+FEEDBACK | LEFT ticks = -5972 | RIGHT ticks = -5373
+FEEDBACK | LEFT ticks = -5732 | RIGHT ticks = -5129
+sFEEDBACK | LEFT ticks = -5299 | RIGHT ticks = -4689
+
+Send command: Received command: s
+=== STATUS ===
+Last command = forward
+Motors running = YES
+Test speed PWM = 180
+Motor timeout ms = 1000
+Feedback interval ms = 250
+LEFT ticks = -5046
+RIGHT ticks = -4432
+FEEDBACK | LEFT ticks = -4818 | RIGHT ticks = -4199
+FEEDBACK | LEFT ticks = -4322 | RIGHT ticks = -3698
+Motor timeout reached.
+Motors stopped.
+FEEDBACK | LEFT ticks = -4322 | RIGHT ticks = -3699
+f
+Send command: Received command: f
+Motor command: forward
+FEEDBACK | LEFT ticks = -3127 | RIGHT ticks = -2541
+xFEEDBACK | LEFT ticks = -2887 | RIGHT ticks = -2291
+
+Send command: Received command: x
+Motors stopped.
+FEEDBACK | LEFT ticks = -2827 | RIGHT ticks = -2229
+
+

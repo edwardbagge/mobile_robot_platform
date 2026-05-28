@@ -1,0 +1,51 @@
+wingman@wingman-desktop:~/Documents/mobile_robot_platform/ros2_ws$ ros2 topic echo /left_encoder_ticks
+data: 0
+---
+data: 0
+---
+data: 238
+---
+data: 671
+---
+data: 1153
+---
+data: 1648
+---
+data: 1647
+---
+data: 2853
+---
+data: 2377
+---
+data: 1491
+---
+data: 498
+---
+data: -527
+---
+data: -528
+---
+data: -3020
+---
+data: -3498
+---
+data: -4385
+---
+data: -5378
+---
+data: -6403
+---
+data: -8900
+---
+data: -8659
+---
+data: -8225
+---
+data: -7743
+---
+data: -7247
+---
+data: -6043
+---
+
+
