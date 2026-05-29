@@ -26,11 +26,14 @@ const int RIGHT_B = 26;
 // ---------- PWM settings ----------
 const int PWM_FREQUENCY = 1000;
 const int PWM_RESOLUTION = 8;
-const int TEST_SPEED = 90;
+const int TEST_SPEED = 180;
+const int BRAKE_PWM = 255;
 
 // ---------- Timing ----------
 const unsigned long MOTOR_TIMEOUT = 1000;     // ms
 const unsigned long FEEDBACK_INTERVAL = 250;  // ms
+const unsigned long AUTO_RUN_TIME = 1000;     // ms
+const unsigned long AUTO_SETTLE_TIME = 2000;  // ms
 
 // ---------- Encoder counters ----------
 volatile long leftTicks = 0;
@@ -99,10 +102,16 @@ void setLeftMotor(int speedValue)
   }
 }
 
+void brakeLeftMotor()
+{
+  digitalWrite(LEFT_IN1, HIGH);
+  digitalWrite(LEFT_IN2, HIGH);
+  ledcWrite(LEFT_EN, BRAKE_PWM);
+}
+
 void setRightMotor(int speedValue)
 {
   // Right motor uses IN1 / IN2 / ENA in the working Test 3 wiring.
-  // Direction is reversed in software so that positive speed means robot forward.
 
   if (speedValue > 0)
   {
@@ -122,6 +131,13 @@ void setRightMotor(int speedValue)
     digitalWrite(RIGHT_IN1, LOW);
     digitalWrite(RIGHT_IN2, LOW);
   }
+}
+
+void brakeRightMotor()
+{
+  digitalWrite(RIGHT_IN1, HIGH);
+  digitalWrite(RIGHT_IN2, HIGH);
+  ledcWrite(RIGHT_EN, BRAKE_PWM);
 }
 
 // ---------- Encoder helper functions ----------
@@ -159,14 +175,21 @@ void printEncoderFeedback()
 // ---------- Movement functions ----------
 void stopMotors()
 {
-  setLeftMotor(0);
-  setRightMotor(0);
+  brakeLeftMotor();
+  brakeRightMotor();
 
   motorsRunning = false;
   lastCommand = "stop";
 
-  Serial.println("Motors stopped.");
+  Serial.println("Motors stopped with active brake.");
   printEncoderFeedback();
+}
+
+void releaseMotors()
+{
+  setLeftMotor(0);
+  setRightMotor(0);
+  Serial.println("Motor outputs released.");
 }
 
 void driveForward()
@@ -223,6 +246,78 @@ void turnRight()
 
   Serial.println("Motor command: turn right");
   printEncoderFeedback();
+}
+
+void runTimedMotion(const char *label, int leftSpeed, int rightSpeed)
+{
+  long startLeftTicks;
+  long startRightTicks;
+  long endLeftTicks;
+  long endRightTicks;
+  unsigned long startTime;
+  unsigned long lastPrintTime;
+
+  Serial.println();
+  Serial.print("AUTO STEP | ");
+  Serial.println(label);
+
+  stopMotors();
+  delay(AUTO_SETTLE_TIME);
+  resetEncoderCounts();
+  delay(100);
+
+  getEncoderCounts(startLeftTicks, startRightTicks);
+
+  setLeftMotor(leftSpeed);
+  setRightMotor(rightSpeed);
+  motorsRunning = true;
+  lastCommand = label;
+  startTime = millis();
+  lastPrintTime = startTime;
+
+  Serial.print("AUTO RUN | ");
+  Serial.print(label);
+  Serial.print(" | left PWM = ");
+  Serial.print(leftSpeed);
+  Serial.print(" | right PWM = ");
+  Serial.println(rightSpeed);
+
+  while (millis() - startTime < AUTO_RUN_TIME)
+  {
+    if (millis() - lastPrintTime >= FEEDBACK_INTERVAL)
+    {
+      printEncoderFeedback();
+      lastPrintTime = millis();
+    }
+    delay(5);
+  }
+
+  stopMotors();
+  delay(500);
+  getEncoderCounts(endLeftTicks, endRightTicks);
+
+  Serial.print("RESULT | ");
+  Serial.print(label);
+  Serial.print(" | LEFT delta ticks = ");
+  Serial.print(endLeftTicks - startLeftTicks);
+  Serial.print(" | RIGHT delta ticks = ");
+  Serial.println(endRightTicks - startRightTicks);
+}
+
+void runAutomaticRepeatabilityTest()
+{
+  Serial.println();
+  Serial.println("=== AUTOMATIC MOTOR ENCODER REPEATABILITY TEST ===");
+  Serial.println("Robot must be lifted. Do not touch shafts during this test.");
+
+  runTimedMotion("forward", TEST_SPEED, TEST_SPEED);
+  runTimedMotion("backward", -TEST_SPEED, -TEST_SPEED);
+  runTimedMotion("turn left", -TEST_SPEED, TEST_SPEED);
+  runTimedMotion("turn right", TEST_SPEED, -TEST_SPEED);
+
+  stopMotors();
+  Serial.println("=== AUTOMATIC TEST COMPLETE ===");
+  Serial.println();
 }
 
 // ---------- Status ----------
@@ -301,6 +396,10 @@ void handleCommand(String command)
   {
     resetEncoderCounts();
   }
+  else if (command == "a")
+  {
+    runAutomaticRepeatabilityTest();
+  }
   else
   {
     Serial.println("Unknown command.");
@@ -368,6 +467,7 @@ void setup()
   Serial.println("x = stop");
   Serial.println("s = status");
   Serial.println("z = reset encoder counts");
+  Serial.println("a = automatic repeatability test");
   Serial.println();
 }
 
