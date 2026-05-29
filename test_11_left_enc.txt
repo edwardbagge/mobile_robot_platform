@@ -1,0 +1,57 @@
+wingman@wingman-desktop:~$ cd Documents/mobile_robot_platform/ros2_ws
+wingman@wingman-desktop:~/Documents/mobile_robot_platform/ros2_ws$ source install/setup.bash
+wingman@wingman-desktop:~/Documents/mobile_robot_platform/ros2_ws$ ros2 topic echo /left_encoder_ticks
+data: 0
+---
+data: 0
+---
+data: 235
+---
+data: 661
+---
+data: 1135
+---
+data: 1624
+---
+data: 1625
+---
+data: 2774
+---
+data: 2304
+---
+data: 1430
+---
+data: 453
+---
+data: -556
+---
+data: -557
+---
+data: -2924
+---
+data: -3397
+---
+data: -4272
+---
+data: -5249
+---
+data: -6258
+---
+data: -6259
+---
+data: -8623
+---
+data: -8388
+---
+data: -7962
+---
+data: -7488
+---
+data: -6999
+---
+data: -6999
+---
+data: -5839
+---
+
+
