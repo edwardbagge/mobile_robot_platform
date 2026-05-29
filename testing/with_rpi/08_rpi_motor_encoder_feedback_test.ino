@@ -252,8 +252,10 @@ void runTimedMotion(const char *label, int leftSpeed, int rightSpeed)
 {
   long startLeftTicks;
   long startRightTicks;
-  long endLeftTicks;
-  long endRightTicks;
+  long runEndLeftTicks;
+  long runEndRightTicks;
+  long brakeEndLeftTicks;
+  long brakeEndRightTicks;
   unsigned long startTime;
   unsigned long lastPrintTime;
 
@@ -292,28 +294,42 @@ void runTimedMotion(const char *label, int leftSpeed, int rightSpeed)
     delay(5);
   }
 
+  getEncoderCounts(runEndLeftTicks, runEndRightTicks);
   stopMotors();
   delay(500);
-  getEncoderCounts(endLeftTicks, endRightTicks);
+  getEncoderCounts(brakeEndLeftTicks, brakeEndRightTicks);
 
   Serial.print("RESULT | ");
   Serial.print(label);
-  Serial.print(" | LEFT delta ticks = ");
-  Serial.print(endLeftTicks - startLeftTicks);
-  Serial.print(" | RIGHT delta ticks = ");
-  Serial.println(endRightTicks - startRightTicks);
+  Serial.print(" | LEFT run = ");
+  Serial.print(runEndLeftTicks - startLeftTicks);
+  Serial.print(" | RIGHT run = ");
+  Serial.print(runEndRightTicks - startRightTicks);
+  Serial.print(" | LEFT brake = ");
+  Serial.print(brakeEndLeftTicks - runEndLeftTicks);
+  Serial.print(" | RIGHT brake = ");
+  Serial.print(brakeEndRightTicks - runEndRightTicks);
+  Serial.print(" | LEFT total = ");
+  Serial.print(brakeEndLeftTicks - startLeftTicks);
+  Serial.print(" | RIGHT total = ");
+  Serial.println(brakeEndRightTicks - startRightTicks);
 }
 
 void runAutomaticRepeatabilityTest()
 {
   Serial.println();
-  Serial.println("=== AUTOMATIC MOTOR ENCODER REPEATABILITY TEST ===");
+  Serial.println("=== AUTOMATIC MOTOR ENCODER REPEATABILITY AND ISOLATION TEST ===");
   Serial.println("Robot must be lifted. Do not touch shafts during this test.");
+  Serial.println("RESULT fields separate run ticks from post-brake ticks.");
 
   runTimedMotion("forward", TEST_SPEED, TEST_SPEED);
   runTimedMotion("backward", -TEST_SPEED, -TEST_SPEED);
   runTimedMotion("turn left", -TEST_SPEED, TEST_SPEED);
   runTimedMotion("turn right", TEST_SPEED, -TEST_SPEED);
+  runTimedMotion("left forward only", TEST_SPEED, 0);
+  runTimedMotion("left backward only", -TEST_SPEED, 0);
+  runTimedMotion("right forward only", 0, TEST_SPEED);
+  runTimedMotion("right backward only", 0, -TEST_SPEED);
 
   stopMotors();
   Serial.println("=== AUTOMATIC TEST COMPLETE ===");
