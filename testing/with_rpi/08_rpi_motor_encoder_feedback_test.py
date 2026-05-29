@@ -12,6 +12,7 @@
 # x = stop
 # s = status
 # z = reset encoder counts
+# a = automatic repeatability test
 # q = quit Python program
 
 import serial
@@ -68,6 +69,7 @@ def main():
     print("x = stop")
     print("s = status")
     print("z = reset encoder counts")
+    print("a = automatic repeatability test")
     print("q = quit")
     print()
 
@@ -84,7 +86,7 @@ def main():
                 time.sleep(0.2)
                 break
 
-            if command not in ["f", "b", "l", "r", "x", "s", "z"]:
+            if command not in ["f", "b", "l", "r", "x", "s", "z", "a"]:
                 print("Unknown local command.")
                 continue
 
