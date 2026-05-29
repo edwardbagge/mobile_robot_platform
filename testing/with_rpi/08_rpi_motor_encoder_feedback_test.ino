@@ -106,14 +106,14 @@ void setRightMotor(int speedValue)
 
   if (speedValue > 0)
   {
-    digitalWrite(RIGHT_IN1, LOW);
-    digitalWrite(RIGHT_IN2, HIGH);
+    digitalWrite(RIGHT_IN1, HIGH);
+    digitalWrite(RIGHT_IN2, LOW);
     ledcWrite(RIGHT_EN, speedValue);
   }
   else if (speedValue < 0)
   {
-    digitalWrite(RIGHT_IN1, HIGH);
-    digitalWrite(RIGHT_IN2, LOW);
+    digitalWrite(RIGHT_IN1, LOW);
+    digitalWrite(RIGHT_IN2, HIGH);
     ledcWrite(RIGHT_EN, -speedValue);
   }
   else
