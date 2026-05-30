@@ -50,13 +50,22 @@ find_package(std_srvs REQUIRED)
 ################################################################################
 # Build
 ################################################################################
-include_directories(
-  ${RPLIDAR_SDK_PATH}/include
-  ${RPLIDAR_SDK_PATH}/src
-  ${Boost_INCLUDE_DIRS}
+add_library(rplidar_sdk OBJECT ${RPLIDAR_SDK_SRC})
+target_include_directories(rplidar_sdk
+  SYSTEM PRIVATE
+    ${RPLIDAR_SDK_PATH}/include
+    ${RPLIDAR_SDK_PATH}/src
 )
+# Keep vendored SDK warnings out of normal package builds.
+target_compile_options(rplidar_sdk PRIVATE -w)
 
-add_executable(rplidar_node	src/rplidar_node.cpp ${RPLIDAR_SDK_SRC})
+add_executable(rplidar_node src/rplidar_node.cpp $<TARGET_OBJECTS:rplidar_sdk>)
+target_include_directories(rplidar_node PRIVATE include)
+target_include_directories(rplidar_node
+  SYSTEM PRIVATE
+    ${RPLIDAR_SDK_PATH}/include
+    ${RPLIDAR_SDK_PATH}/src
+)
 # target_link_libraries(rplidar_node ${ament_cmake_LIBRARIES})
 ament_target_dependencies(rplidar_node
   rclcpp
@@ -64,7 +73,13 @@ ament_target_dependencies(rplidar_node
   sensor_msgs
 )
 
-add_executable(rplidar_composition src/rplidar_node.cpp ${RPLIDAR_SDK_SRC})
+add_executable(rplidar_composition src/rplidar_node.cpp $<TARGET_OBJECTS:rplidar_sdk>)
+target_include_directories(rplidar_composition PRIVATE include)
+target_include_directories(rplidar_composition
+  SYSTEM PRIVATE
+    ${RPLIDAR_SDK_PATH}/include
+    ${RPLIDAR_SDK_PATH}/src
+)
 ament_target_dependencies(rplidar_composition
   rclcpp
   std_srvs
@@ -93,7 +108,7 @@ install(
 # Macro for ament package
 ################################################################################
 ament_export_dependencies(rclcpp)
-ament_export_dependencies(std_msgs)
+ament_export_dependencies(std_srvs)
 ament_export_dependencies(sensor_msgs)
 ament_export_include_directories(include)
 ament_package()
