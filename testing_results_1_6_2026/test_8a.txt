@@ -1,0 +1,129 @@
+wingman@wingman-desktop:~$ cd Documents
+wingman@wingman-desktop:~/Documents$ git clone https://github.com/edwardbagge/mobile_robot_platform.git
+Cloning into 'mobile_robot_platform'...
+remote: Enumerating objects: 518, done.
+remote: Counting objects: 100% (111/111), done.
+remote: Compressing objects: 100% (105/105), done.
+remote: Total 518 (delta 49), reused 13 (delta 6), pack-reused 407 (from 1)
+Receiving objects: 100% (518/518), 473.01 KiB | 2.77 MiB/s, done.
+Resolving deltas: 100% (213/213), done.
+wingman@wingman-desktop:~/Documents$ cd mobile_robot_platform
+wingman@wingman-desktop:~/Documents/mobile_robot_platform$ cd testing
+wingman@wingman-desktop:~/Documents/mobile_robot_platform/testing$ cd with_rpi
+wingman@wingman-desktop:~/Documents/mobile_robot_platform/testing/with_rpi$ ls
+06_rpi_serial_command_test.ino  08_rpi_motor_encoder_feedback_test.ino
+07_rpi_motor_command_test.ino   08_rpi_motor_encoder_feedback_test.py
+wingman@wingman-desktop:~/Documents/mobile_robot_platform/testing/with_rpi$ python3 08_rpi_motor_encoder_feedback_test.py
+=== RPI MOTOR ENCODER FEEDBACK TEST ===
+Opening serial port: /dev/ttyUSB0
+
+Commands:
+f = forward
+b = backward
+l = turn left
+r = turn right
+x = stop
+s = status
+z = reset encoder counts
+a = automatic repeatability test
+q = quit
+
+Send command: Received command: y
+Unknown command.
+a
+Send command: Received command: a
+=== AUTOMATIC MOTOR ENCODER REPEATABILITY AND ISOLATION TEST ===
+Robot must be lifted. Do not touch shafts during this test.
+RESULT fields separate run ticks from post-brake ticks.
+AUTO STEP | forward
+Motors stopped with active brake.
+FEEDBACK | LEFT ticks = 0 | RIGHT ticks = 0
+Encoder counts reset.
+AUTO RUN | forward | left PWM = 180 | right PWM = 180
+FEEDBACK | LEFT ticks = 232 | RIGHT ticks = 235
+FEEDBACK | LEFT ticks = 651 | RIGHT ticks = 657
+FEEDBACK | LEFT ticks = 1122 | RIGHT ticks = 1128
+Motors stopped with active brake.
+FEEDBACK | LEFT ticks = 1610 | RIGHT ticks = 1613
+RESULT | forward | LEFT run = 1611 | RIGHT run = 1612 | LEFT brake = 240 | RIGHT brake = 222 | LEFT total = 1851 | RIGHT total = 1834
+AUTO STEP | backward
+Motors stopped with active brake.
+FEEDBACK | LEFT ticks = 1852 | RIGHT ticks = 1834
+Encoder counts reset.
+AUTO RUN | backward | left PWM = -180 | right PWM = -180
+FEEDBACK | LEFT ticks = -463 | RIGHT ticks = -484
+FEEDBACK | LEFT ticks = -1335 | RIGHT ticks = -1333
+FEEDBACK | LEFT ticks = -2316 | RIGHT ticks = -2273
+Motors stopped with active brake.
+FEEDBACK | LEFT ticks = -3333 | RIGHT ticks = -3241
+RESULT | backward | LEFT run = -3332 | RIGHT run = -3241 | LEFT brake = -516 | RIGHT brake = -417 | LEFT total = -3848 | RIGHT total = -3658
+AUTO STEP | turn left
+Motors stopped with active brake.
+FEEDBACK | LEFT ticks = -3850 | RIGHT ticks = -3658
+Encoder counts reset.
+AUTO RUN | turn left | left PWM = -180 | right PWM = 180
+FEEDBACK | LEFT ticks = -464 | RIGHT ticks = 244
+FEEDBACK | LEFT ticks = -1340 | RIGHT ticks = 677
+FEEDBACK | LEFT ticks = -2326 | RIGHT ticks = 1156
+Motors stopped with active brake.
+FEEDBACK | LEFT ticks = -3348 | RIGHT ticks = 1649
+RESULT | turn left | LEFT run = -3348 | RIGHT run = 1648 | LEFT brake = -514 | RIGHT brake = 221 | LEFT total = -3862 | RIGHT total = 1869
+AUTO STEP | turn right
+Motors stopped with active brake.
+FEEDBACK | LEFT ticks = -3864 | RIGHT ticks = 1870
+Encoder counts reset.
+AUTO RUN | turn right | left PWM = 180 | right PWM = -180
+FEEDBACK | LEFT ticks = 234 | RIGHT ticks = -483
+FEEDBACK | LEFT ticks = 658 | RIGHT ticks = -1336
+FEEDBACK | LEFT ticks = 1133 | RIGHT ticks = -2281
+Motors stopped with active brake.
+FEEDBACK | LEFT ticks = 1624 | RIGHT ticks = -3254
+RESULT | turn right | LEFT run = 1623 | RIGHT run = -3254 | LEFT brake = 236 | RIGHT brake = -412 | LEFT total = 1859 | RIGHT total = -3666
+AUTO STEP | left forward only
+Motors stopped with active brake.
+FEEDBACK | LEFT ticks = 1859 | RIGHT ticks = -3666
+Encoder counts reset.
+AUTO RUN | left forward only | left PWM = 180 | right PWM = 0
+FEEDBACK | LEFT ticks = 238 | RIGHT ticks = 0
+FEEDBACK | LEFT ticks = 666 | RIGHT ticks = 0
+FEEDBACK | LEFT ticks = 1144 | RIGHT ticks = 0
+Motors stopped with active brake.
+FEEDBACK | LEFT ticks = 1636 | RIGHT ticks = 0
+RESULT | left forward only | LEFT run = 1636 | RIGHT run = 0 | LEFT brake = 241 | RIGHT brake = 0 | LEFT total = 1877 | RIGHT total = 0
+AUTO STEP | left backward only
+Motors stopped with active brake.
+FEEDBACK | LEFT ticks = 1878 | RIGHT ticks = 0
+Encoder counts reset.
+AUTO RUN | left backward only | left PWM = -180 | right PWM = 0
+FEEDBACK | LEFT ticks = -471 | RIGHT ticks = 0
+FEEDBACK | LEFT ticks = -1353 | RIGHT ticks = 0
+FEEDBACK | LEFT ticks = -2346 | RIGHT ticks = 0
+Motors stopped with active brake.
+FEEDBACK | LEFT ticks = -3372 | RIGHT ticks = 0
+RESULT | left backward only | LEFT run = -3371 | RIGHT run = 0 | LEFT brake = -508 | RIGHT brake = 0 | LEFT total = -3879 | RIGHT total = 0
+AUTO STEP | right forward only
+Motors stopped with active brake.
+FEEDBACK | LEFT ticks = -3880 | RIGHT ticks = 0
+Encoder counts reset.
+AUTO RUN | right forward only | left PWM = 0 | right PWM = 180
+FEEDBACK | LEFT ticks = 0 | RIGHT ticks = 247
+FEEDBACK | LEFT ticks = 0 | RIGHT ticks = 684
+FEEDBACK | LEFT ticks = 0 | RIGHT ticks = 1167
+Motors stopped with active brake.
+FEEDBACK | LEFT ticks = 0 | RIGHT ticks = 1663
+RESULT | right forward only | LEFT run = 0 | RIGHT run = 1663 | LEFT brake = 0 | RIGHT brake = 220 | LEFT total = 0 | RIGHT total = 1883
+AUTO STEP | right backward only
+Motors stopped with active brake.
+FEEDBACK | LEFT ticks = 0 | RIGHT ticks = 1883
+Encoder counts reset.
+AUTO RUN | right backward only | left PWM = 0 | right PWM = -180
+FEEDBACK | LEFT ticks = 0 | RIGHT ticks = -492
+FEEDBACK | LEFT ticks = 0 | RIGHT ticks = -1355
+FEEDBACK | LEFT ticks = 0 | RIGHT ticks = -2309
+Motors stopped with active brake.
+FEEDBACK | LEFT ticks = 0 | RIGHT ticks = -3290
+RESULT | right backward only | LEFT run = 0 | RIGHT run = -3290 | LEFT brake = 0 | RIGHT brake = -407 | LEFT total = 0 | RIGHT total = -3697
+Motors stopped with active brake.
+FEEDBACK | LEFT ticks = 0 | RIGHT ticks = -3698
+=== AUTOMATIC TEST COMPLETE ===
+
