@@ -38,6 +38,10 @@ const unsigned long AUTO_SETTLE_TIME = 2000;  // ms
 // ---------- Encoder counters ----------
 volatile long leftTicks = 0;
 volatile long rightTicks = 0;
+volatile long leftInvalidTransitions = 0;
+volatile long rightInvalidTransitions = 0;
+volatile uint8_t leftEncoderState = 0;
+volatile uint8_t rightEncoderState = 0;
 
 String lastCommand = "none";
 
@@ -47,34 +51,67 @@ unsigned long lastFeedbackTime = 0;
 bool motorsRunning = false;
 
 // ---------- Encoder interrupt functions ----------
-void IRAM_ATTR onLeftA()
+uint8_t IRAM_ATTR readEncoderState(int pinA, int pinB)
 {
-  int a = digitalRead(LEFT_A);
-  int b = digitalRead(LEFT_B);
+  uint8_t a = digitalRead(pinA) ? 1 : 0;
+  uint8_t b = digitalRead(pinB) ? 1 : 0;
 
-  if (a == b)
+  return (a << 1) | b;
+}
+
+int8_t IRAM_ATTR decodeQuadratureTransition(uint8_t previousState, uint8_t currentState)
+{
+  switch ((previousState << 2) | currentState)
   {
-    leftTicks++;
-  }
-  else
-  {
-    leftTicks--;
+    case 0b0001:
+    case 0b0111:
+    case 0b1110:
+    case 0b1000:
+      return 1;
+
+    case 0b0010:
+    case 0b1011:
+    case 0b1101:
+    case 0b0100:
+      return -1;
+
+    default:
+      return 0;
   }
 }
 
-void IRAM_ATTR onRightA()
+void IRAM_ATTR onLeftEncoder()
 {
-  int a = digitalRead(RIGHT_A);
-  int b = digitalRead(RIGHT_B);
+  uint8_t currentState = readEncoderState(LEFT_A, LEFT_B);
+  int8_t step = decodeQuadratureTransition(leftEncoderState, currentState);
 
-  if (a == b)
+  if (step != 0)
   {
-    rightTicks++;
+    leftTicks += step;
   }
-  else
+  else if (currentState != leftEncoderState)
   {
-    rightTicks--;
+    leftInvalidTransitions++;
   }
+
+  leftEncoderState = currentState;
+}
+
+void IRAM_ATTR onRightEncoder()
+{
+  uint8_t currentState = readEncoderState(RIGHT_A, RIGHT_B);
+  int8_t step = decodeQuadratureTransition(rightEncoderState, currentState);
+
+  if (step != 0)
+  {
+    rightTicks += step;
+  }
+  else if (currentState != rightEncoderState)
+  {
+    rightInvalidTransitions++;
+  }
+
+  rightEncoderState = currentState;
 }
 
 // ---------- Motor control ----------
@@ -149,11 +186,23 @@ void getEncoderCounts(long &leftCount, long &rightCount)
   interrupts();
 }
 
+void getInvalidTransitionCounts(long &leftInvalid, long &rightInvalid)
+{
+  noInterrupts();
+  leftInvalid = leftInvalidTransitions;
+  rightInvalid = rightInvalidTransitions;
+  interrupts();
+}
+
 void resetEncoderCounts()
 {
   noInterrupts();
   leftTicks = 0;
   rightTicks = 0;
+  leftInvalidTransitions = 0;
+  rightInvalidTransitions = 0;
+  leftEncoderState = readEncoderState(LEFT_A, LEFT_B);
+  rightEncoderState = readEncoderState(RIGHT_A, RIGHT_B);
   interrupts();
 
   Serial.println("Encoder counts reset.");
@@ -163,13 +212,20 @@ void printEncoderFeedback()
 {
   long currentLeftTicks;
   long currentRightTicks;
+  long currentLeftInvalid;
+  long currentRightInvalid;
 
   getEncoderCounts(currentLeftTicks, currentRightTicks);
+  getInvalidTransitionCounts(currentLeftInvalid, currentRightInvalid);
 
   Serial.print("FEEDBACK | LEFT ticks = ");
   Serial.print(currentLeftTicks);
   Serial.print(" | RIGHT ticks = ");
-  Serial.println(currentRightTicks);
+  Serial.print(currentRightTicks);
+  Serial.print(" | LEFT invalid = ");
+  Serial.print(currentLeftInvalid);
+  Serial.print(" | RIGHT invalid = ");
+  Serial.println(currentRightInvalid);
 }
 
 // ---------- Movement functions ----------
@@ -256,6 +312,12 @@ void runTimedMotion(const char *label, int leftSpeed, int rightSpeed)
   long runEndRightTicks;
   long brakeEndLeftTicks;
   long brakeEndRightTicks;
+  long startLeftInvalid;
+  long startRightInvalid;
+  long runEndLeftInvalid;
+  long runEndRightInvalid;
+  long brakeEndLeftInvalid;
+  long brakeEndRightInvalid;
   unsigned long startTime;
   unsigned long lastPrintTime;
 
@@ -269,6 +331,7 @@ void runTimedMotion(const char *label, int leftSpeed, int rightSpeed)
   delay(100);
 
   getEncoderCounts(startLeftTicks, startRightTicks);
+  getInvalidTransitionCounts(startLeftInvalid, startRightInvalid);
 
   setLeftMotor(leftSpeed);
   setRightMotor(rightSpeed);
@@ -295,9 +358,11 @@ void runTimedMotion(const char *label, int leftSpeed, int rightSpeed)
   }
 
   getEncoderCounts(runEndLeftTicks, runEndRightTicks);
+  getInvalidTransitionCounts(runEndLeftInvalid, runEndRightInvalid);
   stopMotors();
   delay(500);
   getEncoderCounts(brakeEndLeftTicks, brakeEndRightTicks);
+  getInvalidTransitionCounts(brakeEndLeftInvalid, brakeEndRightInvalid);
 
   Serial.print("RESULT | ");
   Serial.print(label);
@@ -312,7 +377,15 @@ void runTimedMotion(const char *label, int leftSpeed, int rightSpeed)
   Serial.print(" | LEFT total = ");
   Serial.print(brakeEndLeftTicks - startLeftTicks);
   Serial.print(" | RIGHT total = ");
-  Serial.println(brakeEndRightTicks - startRightTicks);
+  Serial.print(brakeEndRightTicks - startRightTicks);
+  Serial.print(" | LEFT invalid run = ");
+  Serial.print(runEndLeftInvalid - startLeftInvalid);
+  Serial.print(" | RIGHT invalid run = ");
+  Serial.print(runEndRightInvalid - startRightInvalid);
+  Serial.print(" | LEFT invalid brake = ");
+  Serial.print(brakeEndLeftInvalid - runEndLeftInvalid);
+  Serial.print(" | RIGHT invalid brake = ");
+  Serial.println(brakeEndRightInvalid - runEndRightInvalid);
 }
 
 void runAutomaticRepeatabilityTest()
@@ -463,8 +536,13 @@ void setup()
   pinMode(RIGHT_A, INPUT);
   pinMode(RIGHT_B, INPUT);
 
-  attachInterrupt(digitalPinToInterrupt(LEFT_A), onLeftA, CHANGE);
-  attachInterrupt(digitalPinToInterrupt(RIGHT_A), onRightA, CHANGE);
+  leftEncoderState = readEncoderState(LEFT_A, LEFT_B);
+  rightEncoderState = readEncoderState(RIGHT_A, RIGHT_B);
+
+  attachInterrupt(digitalPinToInterrupt(LEFT_A), onLeftEncoder, CHANGE);
+  attachInterrupt(digitalPinToInterrupt(LEFT_B), onLeftEncoder, CHANGE);
+  attachInterrupt(digitalPinToInterrupt(RIGHT_A), onRightEncoder, CHANGE);
+  attachInterrupt(digitalPinToInterrupt(RIGHT_B), onRightEncoder, CHANGE);
 
   ledcAttach(LEFT_EN, PWM_FREQUENCY, PWM_RESOLUTION);
   ledcAttach(RIGHT_EN, PWM_FREQUENCY, PWM_RESOLUTION);
