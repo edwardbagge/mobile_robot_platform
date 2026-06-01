@@ -1,0 +1,221 @@
+wingman@wingman-desktop:~$ cd Documents
+wingman@wingman-desktop:~/Documents$ cd mobile_robot_platform
+wingman@wingman-desktop:~/Documents/mobile_robot_platform$ cd testing
+wingman@wingman-desktop:~/Documents/mobile_robot_platform/testing$ cd with_rpi
+wingman@wingman-desktop:~/Documents/mobile_robot_platform/testing/with_rpi$ ls
+06_rpi_serial_command_test.ino  08_rpi_motor_encoder_feedback_test.ino
+07_rpi_motor_command_test.ino   08_rpi_motor_encoder_feedback_test.py
+wingman@wingman-desktop:~/Documents/mobile_robot_platform/testing/with_rpi$ python3 08_rpi_motor_encoder_feedback_test.py
+=== RPI MOTOR ENCODER FEEDBACK TEST ===
+Opening serial port: /dev/ttyUSB0
+
+Commands:
+f = forward
+b = backward
+l = turn left
+r = turn right
+x = stop
+s = status
+z = reset encoder counts
+a = automatic repeatability test
+q = quit
+
+Send command: Received command: y
+Unknown command.
+a
+Send command: Received command: a
+=== AUTOMATIC MOTOR ENCODER REPEATABILITY AND ISOLATION TEST ===
+Robot must be lifted. Do not touch shafts during this test.
+RESULT fields separate run ticks from post-brake ticks.
+AUTO STEP | forward
+Motors stopped with active brake.
+FEEDBACK | LEFT ticks = 0 | RIGHT ticks = 0 | LEFT invalid = 0 | RIGHT invalid = 0
+Encoder counts reset.
+AUTO RUN | forward | left PWM = 180 | right PWM = 180
+FEEDBACK | LEFT ticks = 927 | RIGHT ticks = 967 | LEFT invalid = 0 | RIGHT invalid = 0
+FEEDBACK | LEFT ticks = 2657 | RIGHT ticks = 2726 | LEFT invalid = 0 | RIGHT invalid = 0
+FEEDBACK | LEFT ticks = 4596 | RIGHT ticks = 4683 | LEFT invalid = 0 | RIGHT invalid = 0
+Motors stopped with active brake.
+FEEDBACK | LEFT ticks = 6479 | RIGHT ticks = 6578 | LEFT invalid = 0 | RIGHT invalid = 0
+RESULT | forward | LEFT run = 6479 | RIGHT run = 6578 | LEFT brake = 949 | RIGHT brake = 882 | LEFT total = 7428 | RIGHT total = 7460 | LEFT invalid run = 0 | RIGHT invalid run = 0 | LEFT invalid brake = 0 | RIGHT invalid brake = 0
+AUTO STEP | backward
+Motors stopped with active brake.
+FEEDBACK | LEFT ticks = 7433 | RIGHT ticks = 7459 | LEFT invalid = 0 | RIGHT invalid = 0
+Encoder counts reset.
+AUTO RUN | backward | left PWM = -180 | right PWM = -180
+FEEDBACK | LEFT ticks = -949 | RIGHT ticks = -965 | LEFT invalid = 0 | RIGHT invalid = 0
+FEEDBACK | LEFT ticks = -2739 | RIGHT ticks = -2707 | LEFT invalid = 0 | RIGHT invalid = 1
+FEEDBACK | LEFT ticks = -4758 | RIGHT ticks = -4642 | LEFT invalid = 0 | RIGHT invalid = 1
+Motors stopped with active brake.
+FEEDBACK | LEFT ticks = -6724 | RIGHT ticks = -6514 | LEFT invalid = 0 | RIGHT invalid = 1
+RESULT | backward | LEFT run = -6723 | RIGHT run = -6514 | LEFT brake = -1014 | RIGHT brake = -814 | LEFT total = -7737 | RIGHT total = -7328 | LEFT invalid run = 0 | RIGHT invalid run = 1 | LEFT invalid brake = 0 | RIGHT invalid brake = 0
+AUTO STEP | turn left
+Motors stopped with active brake.
+FEEDBACK | LEFT ticks = -7742 | RIGHT ticks = -7327 | LEFT invalid = 0 | RIGHT invalid = 1
+Encoder counts reset.
+AUTO RUN | turn left | left PWM = -180 | right PWM = 180
+FEEDBACK | LEFT ticks = -949 | RIGHT ticks = 976 | LEFT invalid = 0 | RIGHT invalid = 0
+FEEDBACK | LEFT ticks = -2738 | RIGHT ticks = 2752 | LEFT invalid = 0 | RIGHT invalid = 0
+FEEDBACK | LEFT ticks = -4756 | RIGHT ticks = 4723 | LEFT invalid = 0 | RIGHT invalid = 0
+Motors stopped with active brake.
+FEEDBACK | LEFT ticks = -6720 | RIGHT ticks = 6628 | LEFT invalid = 0 | RIGHT invalid = 0
+RESULT | turn left | LEFT run = -6720 | RIGHT run = 6628 | LEFT brake = -1022 | RIGHT brake = 874 | LEFT total = -7742 | RIGHT total = 7502 | LEFT invalid run = 0 | RIGHT invalid run = 0 | LEFT invalid brake = 0 | RIGHT invalid brake = 0
+AUTO STEP | turn right
+Motors stopped with active brake.
+FEEDBACK | LEFT ticks = -7749 | RIGHT ticks = 7499 | LEFT invalid = 0 | RIGHT invalid = 0
+Encoder counts reset.
+AUTO RUN | turn right | left PWM = 180 | right PWM = -180
+FEEDBACK | LEFT ticks = 937 | RIGHT ticks = -966 | LEFT invalid = 0 | RIGHT invalid = 0
+FEEDBACK | LEFT ticks = 2677 | RIGHT ticks = -2719 | LEFT invalid = 0 | RIGHT invalid = 0
+FEEDBACK | LEFT ticks = 4624 | RIGHT ticks = -4665 | LEFT invalid = 0 | RIGHT invalid = 0
+Motors stopped with active brake.
+FEEDBACK | LEFT ticks = 6513 | RIGHT ticks = -6546 | LEFT invalid = 0 | RIGHT invalid = 0
+RESULT | turn right | LEFT run = 6513 | RIGHT run = -6545 | LEFT brake = 951 | RIGHT brake = -823 | LEFT total = 7464 | RIGHT total = -7368 | LEFT invalid run = 0 | RIGHT invalid run = 0 | LEFT invalid brake = 0 | RIGHT invalid brake = 0
+AUTO STEP | left forward only
+Motors stopped with active brake.
+FEEDBACK | LEFT ticks = 7470 | RIGHT ticks = -7368 | LEFT invalid = 0 | RIGHT invalid = 0
+Encoder counts reset.
+AUTO RUN | left forward only | left PWM = 180 | right PWM = 0
+FEEDBACK | LEFT ticks = 951 | RIGHT ticks = 0 | LEFT invalid = 0 | RIGHT invalid = 0
+FEEDBACK | LEFT ticks = 2704 | RIGHT ticks = 0 | LEFT invalid = 0 | RIGHT invalid = 0
+FEEDBACK | LEFT ticks = 4666 | RIGHT ticks = 0 | LEFT invalid = 0 | RIGHT invalid = 0
+Motors stopped with active brake.
+FEEDBACK | LEFT ticks = 6568 | RIGHT ticks = 0 | LEFT invalid = 0 | RIGHT invalid = 0
+RESULT | left forward only | LEFT run = 6568 | RIGHT run = 0 | LEFT brake = 954 | RIGHT brake = 0 | LEFT total = 7522 | RIGHT total = 0 | LEFT invalid run = 0 | RIGHT invalid run = 0 | LEFT invalid brake = 0 | RIGHT invalid brake = 0
+AUTO STEP | left backward only
+Motors stopped with active brake.
+FEEDBACK | LEFT ticks = 7527 | RIGHT ticks = 0 | LEFT invalid = 0 | RIGHT invalid = 0
+Encoder counts reset.
+AUTO RUN | left backward only | left PWM = -180 | right PWM = 0
+FEEDBACK | LEFT ticks = -964 | RIGHT ticks = 0 | LEFT invalid = 0 | RIGHT invalid = 0
+FEEDBACK | LEFT ticks = -2773 | RIGHT ticks = 0 | LEFT invalid = 0 | RIGHT invalid = 0
+FEEDBACK | LEFT ticks = -4809 | RIGHT ticks = 0 | LEFT invalid = 0 | RIGHT invalid = 0
+Motors stopped with active brake.
+FEEDBACK | LEFT ticks = -6788 | RIGHT ticks = 0 | LEFT invalid = 0 | RIGHT invalid = 0
+RESULT | left backward only | LEFT run = -6788 | RIGHT run = 0 | LEFT brake = -1019 | RIGHT brake = 0 | LEFT total = -7807 | RIGHT total = 0 | LEFT invalid run = 0 | RIGHT invalid run = 0 | LEFT invalid brake = 0 | RIGHT invalid brake = 0
+AUTO STEP | right forward only
+Motors stopped with active brake.
+FEEDBACK | LEFT ticks = -7813 | RIGHT ticks = 0 | LEFT invalid = 0 | RIGHT invalid = 0
+Encoder counts reset.
+AUTO RUN | right forward only | left PWM = 0 | right PWM = 180
+FEEDBACK | LEFT ticks = 0 | RIGHT ticks = 985 | LEFT invalid = 0 | RIGHT invalid = 0
+FEEDBACK | LEFT ticks = 0 | RIGHT ticks = 2778 | LEFT invalid = 0 | RIGHT invalid = 0
+FEEDBACK | LEFT ticks = 0 | RIGHT ticks = 4764 | LEFT invalid = 0 | RIGHT invalid = 0
+Motors stopped with active brake.
+FEEDBACK | LEFT ticks = 0 | RIGHT ticks = 6685 | LEFT invalid = 0 | RIGHT invalid = 0
+RESULT | right forward only | LEFT run = 0 | RIGHT run = 6684 | LEFT brake = 0 | RIGHT brake = 879 | LEFT total = 0 | RIGHT total = 7563 | LEFT invalid run = 0 | RIGHT invalid run = 0 | LEFT invalid brake = 0 | RIGHT invalid brake = 0
+AUTO STEP | right backward only
+Motors stopped with active brake.
+FEEDBACK | LEFT ticks = 0 | RIGHT ticks = 7561 | LEFT invalid = 0 | RIGHT invalid = 0
+Encoder counts reset.
+AUTO RUN | right backward only | left PWM = 0 | right PWM = -180
+FEEDBACK | LEFT ticks = 0 | RIGHT ticks = -980 | LEFT invalid = 0 | RIGHT invalid = 0
+FEEDBACK | LEFT ticks = 0 | RIGHT ticks = -2751 | LEFT invalid = 0 | RIGHT invalid = 0
+FEEDBACK | LEFT ticks = 0 | RIGHT ticks = -4711 | LEFT invalid = 0 | RIGHT invalid = 0
+Motors stopped with active brake.
+FEEDBACK | LEFT ticks = 0 | RIGHT ticks = -6604 | LEFT invalid = 0 | RIGHT invalid = 0
+RESULT | right backward only | LEFT run = 0 | RIGHT run = -6604 | LEFT brake = 0 | RIGHT brake = -822 | LEFT total = 0 | RIGHT total = -7426 | LEFT invalid run = 0 | RIGHT invalid run = 0 | LEFT invalid brake = 0 | RIGHT invalid brake = 0
+Motors stopped with active brake.
+FEEDBACK | LEFT ticks = 0 | RIGHT ticks = -7425 | LEFT invalid = 0 | RIGHT invalid = 0
+=== AUTOMATIC TEST COMPLETE ===
+z
+Send command: Received command: z
+Encoder counts reset.
+a
+Send command: Received command: a
+=== AUTOMATIC MOTOR ENCODER REPEATABILITY AND ISOLATION TEST ===
+Robot must be lifted. Do not touch shafts during this test.
+RESULT fields separate run ticks from post-brake ticks.
+AUTO STEP | forward
+Motors stopped with active brake.
+FEEDBACK | LEFT ticks = 0 | RIGHT ticks = 0 | LEFT invalid = 0 | RIGHT invalid = 0
+Encoder counts reset.
+AUTO RUN | forward | left PWM = 180 | right PWM = 180
+FEEDBACK | LEFT ticks = 931 | RIGHT ticks = 975 | LEFT invalid = 1 | RIGHT invalid = 0
+FEEDBACK | LEFT ticks = 2665 | RIGHT ticks = 2756 | LEFT invalid = 1 | RIGHT invalid = 0
+FEEDBACK | LEFT ticks = 4606 | RIGHT ticks = 4735 | LEFT invalid = 1 | RIGHT invalid = 1
+Motors stopped with active brake.
+FEEDBACK | LEFT ticks = 6493 | RIGHT ticks = 6652 | LEFT invalid = 1 | RIGHT invalid = 1
+RESULT | forward | LEFT run = 6493 | RIGHT run = 6652 | LEFT brake = 945 | RIGHT brake = 881 | LEFT total = 7438 | RIGHT total = 7533 | LEFT invalid run = 1 | RIGHT invalid run = 1 | LEFT invalid brake = 1 | RIGHT invalid brake = 0
+AUTO STEP | backward
+Motors stopped with active brake.
+FEEDBACK | LEFT ticks = 7444 | RIGHT ticks = 7531 | LEFT invalid = 2 | RIGHT invalid = 1
+Encoder counts reset.
+AUTO RUN | backward | left PWM = -180 | right PWM = -180
+FEEDBACK | LEFT ticks = -951 | RIGHT ticks = -972 | LEFT invalid = 0 | RIGHT invalid = 0
+FEEDBACK | LEFT ticks = -2742 | RIGHT ticks = -2730 | LEFT invalid = 0 | RIGHT invalid = 0
+FEEDBACK | LEFT ticks = -4765 | RIGHT ticks = -4681 | LEFT invalid = 0 | RIGHT invalid = 0
+Motors stopped with active brake.
+FEEDBACK | LEFT ticks = -6735 | RIGHT ticks = -6568 | LEFT invalid = 0 | RIGHT invalid = 0
+RESULT | backward | LEFT run = -6734 | RIGHT run = -6568 | LEFT brake = -1017 | RIGHT brake = -824 | LEFT total = -7751 | RIGHT total = -7392 | LEFT invalid run = 0 | RIGHT invalid run = 0 | LEFT invalid brake = 0 | RIGHT invalid brake = 0
+AUTO STEP | turn left
+Motors stopped with active brake.
+FEEDBACK | LEFT ticks = -7757 | RIGHT ticks = -7393 | LEFT invalid = 0 | RIGHT invalid = 0
+Encoder counts reset.
+AUTO RUN | turn left | left PWM = -180 | right PWM = 180
+FEEDBACK | LEFT ticks = -956 | RIGHT ticks = 985 | LEFT invalid = 0 | RIGHT invalid = 0
+FEEDBACK | LEFT ticks = -2748 | RIGHT ticks = 2775 | LEFT invalid = 0 | RIGHT invalid = 0
+FEEDBACK | LEFT ticks = -4773 | RIGHT ticks = 4763 | LEFT invalid = 0 | RIGHT invalid = 0
+Motors stopped with active brake.
+FEEDBACK | LEFT ticks = -6743 | RIGHT ticks = 6685 | LEFT invalid = 0 | RIGHT invalid = 0
+RESULT | turn left | LEFT run = -6742 | RIGHT run = 6684 | LEFT brake = -1015 | RIGHT brake = 882 | LEFT total = -7757 | RIGHT total = 7566 | LEFT invalid run = 0 | RIGHT invalid run = 0 | LEFT invalid brake = 0 | RIGHT invalid brake = 0
+AUTO STEP | turn right
+Motors stopped with active brake.
+FEEDBACK | LEFT ticks = -7763 | RIGHT ticks = 7566 | LEFT invalid = 0 | RIGHT invalid = 0
+Encoder counts reset.
+AUTO RUN | turn right | left PWM = 180 | right PWM = -180
+FEEDBACK | LEFT ticks = 938 | RIGHT ticks = -971 | LEFT invalid = 0 | RIGHT invalid = 0
+FEEDBACK | LEFT ticks = 2673 | RIGHT ticks = -2731 | LEFT invalid = 0 | RIGHT invalid = 0
+FEEDBACK | LEFT ticks = 4619 | RIGHT ticks = -4684 | LEFT invalid = 0 | RIGHT invalid = 0
+Motors stopped with active brake.
+FEEDBACK | LEFT ticks = 6510 | RIGHT ticks = -6572 | LEFT invalid = 0 | RIGHT invalid = 0
+RESULT | turn right | LEFT run = 6510 | RIGHT run = -6571 | LEFT brake = 950 | RIGHT brake = -820 | LEFT total = 7460 | RIGHT total = -7391 | LEFT invalid run = 0 | RIGHT invalid run = 0 | LEFT invalid brake = 0 | RIGHT invalid brake = 0
+AUTO STEP | left forward only
+Motors stopped with active brake.
+FEEDBACK | LEFT ticks = 7465 | RIGHT ticks = -7391 | LEFT invalid = 0 | RIGHT invalid = 0
+Encoder counts reset.
+AUTO RUN | left forward only | left PWM = 180 | right PWM = 0
+FEEDBACK | LEFT ticks = 947 | RIGHT ticks = 0 | LEFT invalid = 0 | RIGHT invalid = 0
+FEEDBACK | LEFT ticks = 2699 | RIGHT ticks = 0 | LEFT invalid = 0 | RIGHT invalid = 0
+FEEDBACK | LEFT ticks = 4661 | RIGHT ticks = 0 | LEFT invalid = 0 | RIGHT invalid = 0
+Motors stopped with active brake.
+FEEDBACK | LEFT ticks = 6563 | RIGHT ticks = 0 | LEFT invalid = 0 | RIGHT invalid = 0
+RESULT | left forward only | LEFT run = 6562 | RIGHT run = 0 | LEFT brake = 948 | RIGHT brake = 0 | LEFT total = 7510 | RIGHT total = 0 | LEFT invalid run = 0 | RIGHT invalid run = 0 | LEFT invalid brake = 0 | RIGHT invalid brake = 0
+AUTO STEP | left backward only
+Motors stopped with active brake.
+FEEDBACK | LEFT ticks = 7514 | RIGHT ticks = 0 | LEFT invalid = 0 | RIGHT invalid = 0
+Encoder counts reset.
+AUTO RUN | left backward only | left PWM = -180 | right PWM = 0
+FEEDBACK | LEFT ticks = -963 | RIGHT ticks = 0 | LEFT invalid = 0 | RIGHT invalid = 0
+FEEDBACK | LEFT ticks = -2771 | RIGHT ticks = 0 | LEFT invalid = 0 | RIGHT invalid = 0
+FEEDBACK | LEFT ticks = -4805 | RIGHT ticks = 0 | LEFT invalid = 0 | RIGHT invalid = 0
+Motors stopped with active brake.
+FEEDBACK | LEFT ticks = -6784 | RIGHT ticks = 0 | LEFT invalid = 0 | RIGHT invalid = 0
+RESULT | left backward only | LEFT run = -6783 | RIGHT run = 0 | LEFT brake = -1026 | RIGHT brake = 0 | LEFT total = -7809 | RIGHT total = 0 | LEFT invalid run = 0 | RIGHT invalid run = 0 | LEFT invalid brake = 0 | RIGHT invalid brake = 0
+AUTO STEP | right forward only
+Motors stopped with active brake.
+FEEDBACK | LEFT ticks = -7815 | RIGHT ticks = 0 | LEFT invalid = 0 | RIGHT invalid = 0
+Encoder counts reset.
+AUTO RUN | right forward only | left PWM = 0 | right PWM = 180
+FEEDBACK | LEFT ticks = 0 | RIGHT ticks = 988 | LEFT invalid = 0 | RIGHT invalid = 0
+FEEDBACK | LEFT ticks = 0 | RIGHT ticks = 2789 | LEFT invalid = 0 | RIGHT invalid = 0
+FEEDBACK | LEFT ticks = 0 | RIGHT ticks = 4789 | LEFT invalid = 0 | RIGHT invalid = 0
+Motors stopped with active brake.
+FEEDBACK | LEFT ticks = 0 | RIGHT ticks = 6722 | LEFT invalid = 0 | RIGHT invalid = 0
+RESULT | right forward only | LEFT run = 0 | RIGHT run = 6721 | LEFT brake = 0 | RIGHT brake = 886 | LEFT total = 0 | RIGHT total = 7607 | LEFT invalid run = 0 | RIGHT invalid run = 0 | LEFT invalid brake = 0 | RIGHT invalid brake = 0
+AUTO STEP | right backward only
+Motors stopped with active brake.
+FEEDBACK | LEFT ticks = 0 | RIGHT ticks = 7606 | LEFT invalid = 0 | RIGHT invalid = 0
+Encoder counts reset.
+AUTO RUN | right backward only | left PWM = 0 | right PWM = -180
+FEEDBACK | LEFT ticks = 0 | RIGHT ticks = -986 | LEFT invalid = 0 | RIGHT invalid = 0
+FEEDBACK | LEFT ticks = 0 | RIGHT ticks = -2764 | LEFT invalid = 0 | RIGHT invalid = 0
+FEEDBACK | LEFT ticks = 0 | RIGHT ticks = -4733 | LEFT invalid = 0 | RIGHT invalid = 0
+Motors stopped with active brake.
+FEEDBACK | LEFT ticks = 0 | RIGHT ticks = -6636 | LEFT invalid = 0 | RIGHT invalid = 0
+RESULT | right backward only | LEFT run = 0 | RIGHT run = -6635 | LEFT brake = 0 | RIGHT brake = -823 | LEFT total = 0 | RIGHT total = -7458 | LEFT invalid run = 0 | RIGHT invalid run = 0 | LEFT invalid brake = 0 | RIGHT invalid brake = 0
+Motors stopped with active brake.
+FEEDBACK | LEFT ticks = 0 | RIGHT ticks = -7457 | LEFT invalid = 0 | RIGHT invalid = 0
+=== AUTOMATIC TEST COMPLETE ===
+
+
