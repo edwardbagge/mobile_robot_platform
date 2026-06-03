@@ -11,6 +11,7 @@
 
 #include <algorithm>
 #include <atomic>
+#include <cerrno>
 #include <chrono>
 #include <cmath>
 #include <cstring>
@@ -79,18 +80,15 @@ public:
   {
     running_ = false;
 
-    if (serial_fd_ >= 0)
-    {
+    if (serial_fd_ >= 0) {
       sendSerialLine("X");
     }
 
-    if (read_thread_.joinable())
-    {
+    if (read_thread_.joinable()) {
       read_thread_.join();
     }
 
-    if (serial_fd_ >= 0)
-    {
+    if (serial_fd_ >= 0) {
       close(serial_fd_);
     }
   }
@@ -129,8 +127,7 @@ private:
   {
     serial_fd_ = open(serial_port_.c_str(), O_RDWR | O_NOCTTY | O_NONBLOCK);
 
-    if (serial_fd_ < 0)
-    {
+    if (serial_fd_ < 0) {
       RCLCPP_ERROR(this->get_logger(), "Failed to open serial port: %s", serial_port_.c_str());
       return;
     }
@@ -138,8 +135,7 @@ private:
     termios tty;
     memset(&tty, 0, sizeof tty);
 
-    if (tcgetattr(serial_fd_, &tty) != 0)
-    {
+    if (tcgetattr(serial_fd_, &tty) != 0) {
       RCLCPP_ERROR(this->get_logger(), "Failed to get serial port attributes.");
       close(serial_fd_);
       serial_fd_ = -1;
@@ -163,8 +159,7 @@ private:
     tty.c_cc[VMIN] = 0;
     tty.c_cc[VTIME] = 1;
 
-    if (tcsetattr(serial_fd_, TCSANOW, &tty) != 0)
-    {
+    if (tcsetattr(serial_fd_, TCSANOW, &tty) != 0) {
       RCLCPP_ERROR(this->get_logger(), "Failed to set serial port attributes.");
       close(serial_fd_);
       serial_fd_ = -1;
@@ -176,8 +171,7 @@ private:
 
   void waitForEsp32Startup()
   {
-    if (serial_fd_ < 0)
-    {
+    if (serial_fd_ < 0) {
       return;
     }
 
@@ -213,8 +207,7 @@ private:
 
   int wheelSpeedToPwm(double wheel_speed_mps) const
   {
-    if (std::abs(wheel_speed_mps) < linear_deadband_mps_ || max_wheel_speed_mps_ <= 0.0)
-    {
+    if (std::abs(wheel_speed_mps) < linear_deadband_mps_ || max_wheel_speed_mps_ <= 0.0) {
       return 0;
     }
 
@@ -222,8 +215,7 @@ private:
       std::lround((wheel_speed_mps / max_wheel_speed_mps_) * static_cast<double>(max_pwm_)));
     pwm = std::clamp(pwm, -max_pwm_, max_pwm_);
 
-    if (pwm != 0 && std::abs(pwm) < min_pwm_)
-    {
+    if (pwm != 0 && std::abs(pwm) < min_pwm_) {
       pwm = pwm > 0 ? min_pwm_ : -min_pwm_;
     }
 
@@ -241,8 +233,7 @@ private:
       const auto age = std::chrono::steady_clock::now() - last_cmd_vel_time_;
       timed_out = age > std::chrono::duration<double>(command_timeout_s_);
 
-      if (!timed_out)
-      {
+      if (!timed_out) {
         left_pwm = target_left_pwm_;
         right_pwm = target_right_pwm_;
       }
@@ -252,8 +243,7 @@ private:
 
     sendMotorCommand(left_pwm, right_pwm);
 
-    if (timed_out && had_nonzero_command)
-    {
+    if (timed_out && had_nonzero_command) {
       RCLCPP_WARN(this->get_logger(), "cmd_vel timeout. Sending zero PWM.");
     }
   }
@@ -263,10 +253,8 @@ private:
     std::ostringstream line;
     line << "M " << left_pwm << " " << right_pwm;
 
-    if (sendSerialLine(line.str()))
-    {
-      if (left_pwm != last_sent_left_pwm_ || right_pwm != last_sent_right_pwm_)
-      {
+    if (sendSerialLine(line.str())) {
+      if (left_pwm != last_sent_left_pwm_ || right_pwm != last_sent_right_pwm_) {
         RCLCPP_INFO(
           this->get_logger(),
           "Sent PWM command -> LEFT: %d, RIGHT: %d",
@@ -281,21 +269,46 @@ private:
 
   bool sendSerialLine(const std::string & line)
   {
-    if (serial_fd_ < 0)
-    {
+    if (serial_fd_ < 0) {
       return false;
     }
 
     const std::string serial_line = line + "\n";
-    const ssize_t bytes_written = write(serial_fd_, serial_line.c_str(), serial_line.size());
+    size_t total_bytes_written = 0;
 
-    if (bytes_written < 0)
-    {
-      RCLCPP_ERROR(this->get_logger(), "Failed to write to serial port.");
+    while (total_bytes_written < serial_line.size()) {
+      const ssize_t bytes_written = write(
+        serial_fd_,
+        serial_line.c_str() + total_bytes_written,
+        serial_line.size() - total_bytes_written);
+
+      if (bytes_written > 0) {
+        total_bytes_written += static_cast<size_t>(bytes_written);
+        continue;
+      }
+
+      if (bytes_written == 0) {
+        std::this_thread::sleep_for(1ms);
+        continue;
+      }
+
+      if (errno == EINTR) {
+        continue;
+      }
+
+      if (errno == EAGAIN || errno == EWOULDBLOCK) {
+        std::this_thread::sleep_for(1ms);
+        continue;
+      }
+
+      RCLCPP_ERROR(
+        this->get_logger(),
+        "Failed to write to serial port: %s",
+        std::strerror(errno));
       return false;
     }
 
-    return static_cast<size_t>(bytes_written) == serial_line.size();
+    return true;
   }
 
   void readSerialLoop()
@@ -303,38 +316,39 @@ private:
     std::string line_buffer;
     char buffer[256];
 
-    while (running_)
-    {
-      if (serial_fd_ < 0)
-      {
+    while (running_) {
+      if (serial_fd_ < 0) {
         std::this_thread::sleep_for(100ms);
         continue;
       }
 
       const ssize_t bytes_read = read(serial_fd_, buffer, sizeof(buffer) - 1);
 
-      if (bytes_read > 0)
-      {
+      if (bytes_read > 0) {
         buffer[bytes_read] = '\0';
         line_buffer += buffer;
 
         size_t newline_position = std::string::npos;
-        while ((newline_position = line_buffer.find('\n')) != std::string::npos)
-        {
+        while ((newline_position = line_buffer.find('\n')) != std::string::npos) {
           std::string line = line_buffer.substr(0, newline_position);
           line_buffer.erase(0, newline_position + 1);
 
-          if (!line.empty() && line.back() == '\r')
-          {
+          if (!line.empty() && line.back() == '\r') {
             line.pop_back();
           }
 
           handleSerialLine(line);
         }
-      }
-      else
-      {
+      } else if (bytes_read == 0 || errno == EAGAIN || errno == EWOULDBLOCK) {
         std::this_thread::sleep_for(5ms);
+      } else if (errno == EINTR) {
+        continue;
+      } else {
+        RCLCPP_ERROR(
+          this->get_logger(),
+          "Failed to read from serial port: %s",
+          std::strerror(errno));
+        std::this_thread::sleep_for(50ms);
       }
     }
   }
@@ -346,8 +360,7 @@ private:
 
     std::smatch match;
 
-    if (std::regex_search(line, match, feedback_regex))
-    {
+    if (std::regex_search(line, match, feedback_regex)) {
       std_msgs::msg::Int64 left_msg;
       std_msgs::msg::Int64 right_msg;
 
@@ -356,9 +369,7 @@ private:
 
       left_publisher_->publish(left_msg);
       right_publisher_->publish(right_msg);
-    }
-    else if (!line.empty())
-    {
+    } else if (!line.empty()) {
       RCLCPP_INFO(this->get_logger(), "ESP32: %s", line.c_str());
     }
   }

@@ -10,6 +10,10 @@
 // Feedback format is kept compatible with earlier tests:
 //   FEEDBACK | LEFT ticks = ... | RIGHT ticks = ... | LEFT invalid = ... | RIGHT invalid = ...
 
+#include <ctype.h>
+#include <stdlib.h>
+#include <string.h>
+
 // ---------- Motor pins ----------
 const int RIGHT_IN1 = 13;
 const int RIGHT_IN2 = 21;
@@ -34,6 +38,7 @@ const int MAX_PWM = 255;
 // ---------- Timing ----------
 const unsigned long COMMAND_TIMEOUT_MS = 300;
 const unsigned long FEEDBACK_INTERVAL_MS = 50;
+const size_t SERIAL_COMMAND_BUFFER_SIZE = 64;
 
 // ---------- Encoder counters ----------
 volatile long leftTicks = 0;
@@ -49,6 +54,10 @@ bool commandActive = false;
 
 unsigned long lastCommandTime = 0;
 unsigned long lastFeedbackTime = 0;
+
+char serialCommandBuffer[SERIAL_COMMAND_BUFFER_SIZE];
+size_t serialCommandLength = 0;
+bool serialCommandOverflow = false;
 
 // ---------- Encoder interrupt functions ----------
 uint8_t IRAM_ATTR readEncoderState(int pinA, int pinB)
@@ -303,65 +312,97 @@ void printStatus()
 }
 
 // ---------- Serial command handler ----------
-bool parseMotorCommand(const String &command, int &leftPwm, int &rightPwm)
+char *trimWhitespace(char *text)
 {
-  int firstSpace = command.indexOf(' ');
-  if (firstSpace < 0)
+  while (*text != '\0' && isspace(static_cast<unsigned char>(*text)))
+  {
+    text++;
+  }
+
+  if (*text == '\0')
+  {
+    return text;
+  }
+
+  char *end = text + strlen(text) - 1;
+  while (end > text && isspace(static_cast<unsigned char>(*end)))
+  {
+    *end = '\0';
+    end--;
+  }
+
+  return text;
+}
+
+bool parseMotorCommand(const char *command, int &leftPwm, int &rightPwm)
+{
+  if (command[0] != 'M' && command[0] != 'm')
   {
     return false;
   }
 
-  int secondSpace = command.indexOf(' ', firstSpace + 1);
-  if (secondSpace < 0)
+  char *parseEnd = nullptr;
+  long parsedLeft = strtol(command + 1, &parseEnd, 10);
+  if (parseEnd == command + 1)
   {
     return false;
   }
 
-  String leftPart = command.substring(firstSpace + 1, secondSpace);
-  String rightPart = command.substring(secondSpace + 1);
-  leftPart.trim();
-  rightPart.trim();
+  char *rightStart = parseEnd;
+  long parsedRight = strtol(rightStart, &parseEnd, 10);
+  if (parseEnd == rightStart)
+  {
+    return false;
+  }
 
-  leftPwm = leftPart.toInt();
-  rightPwm = rightPart.toInt();
+  while (*parseEnd != '\0' && isspace(static_cast<unsigned char>(*parseEnd)))
+  {
+    parseEnd++;
+  }
+
+  if (*parseEnd != '\0')
+  {
+    return false;
+  }
+
+  leftPwm = static_cast<int>(parsedLeft);
+  rightPwm = static_cast<int>(parsedRight);
   return true;
 }
 
-void handleCommand(String command)
+void handleCommand(const char *rawCommand)
 {
-  command.trim();
+  char commandBuffer[SERIAL_COMMAND_BUFFER_SIZE];
+  strncpy(commandBuffer, rawCommand, sizeof(commandBuffer) - 1);
+  commandBuffer[sizeof(commandBuffer) - 1] = '\0';
 
-  if (command.length() == 0)
+  char *command = trimWhitespace(commandBuffer);
+
+  if (*command == '\0')
   {
     return;
   }
 
-  int commandStart = -1;
-  for (int i = 0; i < command.length(); i++)
+  char *commandStart = nullptr;
+  for (char *cursor = command; *cursor != '\0'; cursor++)
   {
-    char c = command.charAt(i);
-    if (c == 'M' || c == 'm' || c == 'X' || c == 'x' ||
-        c == 'Z' || c == 'z' || c == 'S' || c == 's')
+    char c = static_cast<char>(toupper(static_cast<unsigned char>(*cursor)));
+    if (c == 'M' || c == 'X' || c == 'Z' || c == 'S')
     {
-      commandStart = i;
+      commandStart = cursor;
       break;
     }
   }
 
-  if (commandStart < 0)
+  if (commandStart == nullptr)
   {
     Serial.print("Ignored serial noise: ");
     Serial.println(command);
     return;
   }
 
-  if (commandStart > 0)
-  {
-    command = command.substring(commandStart);
-    command.trim();
-  }
-
-  char commandType = command.charAt(0);
+  command = trimWhitespace(commandStart);
+  char commandType = static_cast<char>(toupper(static_cast<unsigned char>(command[0])));
 
   if (commandType == 'M' || commandType == 'm')
   {
@@ -395,6 +436,51 @@ void handleCommand(String command)
   {
     Serial.print("Unknown command: ");
     Serial.println(command);
+  }
+}
+
+void processSerialInput()
+{
+  while (Serial.available() > 0)
+  {
+    char incomingByte = static_cast<char>(Serial.read());
+
+    if (incomingByte == '\r')
+    {
+      continue;
+    }
+
+    if (incomingByte == '\n')
+    {
+      if (serialCommandOverflow)
+      {
+        Serial.println("Serial command too long. Buffer cleared.");
+      }
+      else if (serialCommandLength > 0)
+      {
+        serialCommandBuffer[serialCommandLength] = '\0';
+        handleCommand(serialCommandBuffer);
+      }
+
+      serialCommandLength = 0;
+      serialCommandOverflow = false;
+      continue;
+    }
+
+    if (serialCommandOverflow)
+    {
+      continue;
+    }
+
+    if (serialCommandLength >= SERIAL_COMMAND_BUFFER_SIZE - 1)
+    {
+      serialCommandLength = 0;
+      serialCommandOverflow = true;
+      continue;
+    }
+
+    serialCommandBuffer[serialCommandLength] = incomingByte;
+    serialCommandLength++;
   }
 }
 
@@ -460,12 +546,7 @@ void setup()
 
 void loop()
 {
-  if (Serial.available())
-  {
-    String command = Serial.readStringUntil('\n');
-    handleCommand(command);
-  }
-
+  processSerialInput();
   checkCommandTimeout();
   checkFeedbackPrint();
 }
