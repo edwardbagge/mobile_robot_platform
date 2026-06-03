@@ -39,6 +39,7 @@ public:
     min_pwm_ = this->declare_parameter<int>("min_pwm", 0);
     linear_deadband_mps_ = this->declare_parameter<double>("linear_deadband_mps", 0.005);
     angular_deadband_rps_ = this->declare_parameter<double>("angular_deadband_rps", 0.01);
+    startup_delay_s_ = this->declare_parameter<double>("startup_delay_s", 2.5);
 
     max_pwm_ = std::clamp(max_pwm_, 0, 255);
     min_pwm_ = std::clamp(min_pwm_, 0, max_pwm_);
@@ -52,6 +53,8 @@ public:
       std::bind(&BaseSerialBridgeNode::cmdVelCallback, this, std::placeholders::_1));
 
     openSerialPort();
+
+    waitForEsp32Startup();
 
     read_thread_ = std::thread(&BaseSerialBridgeNode::readSerialLoop, this);
 
@@ -69,6 +72,7 @@ public:
     RCLCPP_INFO(this->get_logger(), "max_wheel_speed_mps = %.3f", max_wheel_speed_mps_);
     RCLCPP_INFO(this->get_logger(), "max_pwm = %d", max_pwm_);
     RCLCPP_INFO(this->get_logger(), "min_pwm = %d", min_pwm_);
+    RCLCPP_INFO(this->get_logger(), "startup_delay_s = %.2f", startup_delay_s_);
   }
 
   ~BaseSerialBridgeNode()
@@ -104,6 +108,7 @@ private:
   int min_pwm_;
   double linear_deadband_mps_;
   double angular_deadband_rps_;
+  double startup_delay_s_;
 
   int target_left_pwm_ = 0;
   int target_right_pwm_ = 0;
@@ -167,6 +172,22 @@ private:
     }
 
     RCLCPP_INFO(this->get_logger(), "Serial port opened successfully.");
+  }
+
+  void waitForEsp32Startup()
+  {
+    if (serial_fd_ < 0)
+    {
+      return;
+    }
+
+    const auto delay = std::chrono::duration<double>(std::max(startup_delay_s_, 0.0));
+    RCLCPP_INFO(
+      this->get_logger(),
+      "Waiting %.2f s for ESP32 serial startup.",
+      startup_delay_s_);
+    std::this_thread::sleep_for(delay);
+    tcflush(serial_fd_, TCIOFLUSH);
   }
 
   void cmdVelCallback(const geometry_msgs::msg::Twist::SharedPtr msg)
