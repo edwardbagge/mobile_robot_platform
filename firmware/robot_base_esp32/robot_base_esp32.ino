@@ -336,6 +336,31 @@ void handleCommand(String command)
     return;
   }
 
+  int commandStart = -1;
+  for (int i = 0; i < command.length(); i++)
+  {
+    char c = command.charAt(i);
+    if (c == 'M' || c == 'm' || c == 'X' || c == 'x' ||
+        c == 'Z' || c == 'z' || c == 'S' || c == 's')
+    {
+      commandStart = i;
+      break;
+    }
+  }
+
+  if (commandStart < 0)
+  {
+    Serial.print("Ignored serial noise: ");
+    Serial.println(command);
+    return;
+  }
+
+  if (commandStart > 0)
+  {
+    command = command.substring(commandStart);
+    command.trim();
+  }
+
   char commandType = command.charAt(0);
 
   if (commandType == 'M' || commandType == 'm')
