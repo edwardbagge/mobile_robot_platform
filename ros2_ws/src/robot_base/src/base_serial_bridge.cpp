@@ -38,12 +38,16 @@ public:
     max_wheel_speed_mps_ = this->declare_parameter<double>("max_wheel_speed_mps", 0.25);
     max_pwm_ = this->declare_parameter<int>("max_pwm", 80);
     min_pwm_ = this->declare_parameter<int>("min_pwm", 0);
+    left_pwm_scale_ = this->declare_parameter<double>("left_pwm_scale", 1.0);
+    right_pwm_scale_ = this->declare_parameter<double>("right_pwm_scale", 1.0);
     linear_deadband_mps_ = this->declare_parameter<double>("linear_deadband_mps", 0.005);
     angular_deadband_rps_ = this->declare_parameter<double>("angular_deadband_rps", 0.01);
     startup_delay_s_ = this->declare_parameter<double>("startup_delay_s", 2.5);
 
     max_pwm_ = std::clamp(max_pwm_, 0, 255);
     min_pwm_ = std::clamp(min_pwm_, 0, max_pwm_);
+    left_pwm_scale_ = std::clamp(left_pwm_scale_, 0.0, 2.0);
+    right_pwm_scale_ = std::clamp(right_pwm_scale_, 0.0, 2.0);
 
     left_publisher_ = this->create_publisher<std_msgs::msg::Int64>("/left_encoder_ticks", 10);
     right_publisher_ = this->create_publisher<std_msgs::msg::Int64>("/right_encoder_ticks", 10);
@@ -73,6 +77,8 @@ public:
     RCLCPP_INFO(this->get_logger(), "max_wheel_speed_mps = %.3f", max_wheel_speed_mps_);
     RCLCPP_INFO(this->get_logger(), "max_pwm = %d", max_pwm_);
     RCLCPP_INFO(this->get_logger(), "min_pwm = %d", min_pwm_);
+    RCLCPP_INFO(this->get_logger(), "left_pwm_scale = %.3f", left_pwm_scale_);
+    RCLCPP_INFO(this->get_logger(), "right_pwm_scale = %.3f", right_pwm_scale_);
     RCLCPP_INFO(this->get_logger(), "startup_delay_s = %.2f", startup_delay_s_);
   }
 
@@ -104,6 +110,8 @@ private:
   double max_wheel_speed_mps_;
   int max_pwm_;
   int min_pwm_;
+  double left_pwm_scale_;
+  double right_pwm_scale_;
   double linear_deadband_mps_;
   double angular_deadband_rps_;
   double startup_delay_s_;
@@ -202,7 +210,10 @@ private:
     const double left_wheel_mps = linear_x - (angular_z * wheel_base_m_ * 0.5);
     const double right_wheel_mps = linear_x + (angular_z * wheel_base_m_ * 0.5);
 
-    return {wheelSpeedToPwm(left_wheel_mps), wheelSpeedToPwm(right_wheel_mps)};
+    const int left_pwm = scalePwm(wheelSpeedToPwm(left_wheel_mps), left_pwm_scale_);
+    const int right_pwm = scalePwm(wheelSpeedToPwm(right_wheel_mps), right_pwm_scale_);
+
+    return {left_pwm, right_pwm};
   }
 
   int wheelSpeedToPwm(double wheel_speed_mps) const
@@ -220,6 +231,13 @@ private:
     }
 
     return pwm;
+  }
+
+  int scalePwm(int pwm, double scale) const
+  {
+    const int scaled_pwm = static_cast<int>(
+      std::lround(static_cast<double>(pwm) * scale));
+    return std::clamp(scaled_pwm, -max_pwm_, max_pwm_);
   }
 
   void sendCommandTimerCallback()
