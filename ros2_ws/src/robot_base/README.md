@@ -1,6 +1,6 @@
 # robot_base
 
-This package is the first non-test base bridge for the robot.
+This package contains the first non-test base nodes for the robot.
 
 It keeps the known-good encoder feedback format from Tests 08/11, but replaces the old `f`, `b`, `l`, `r` serial commands with signed PWM commands:
 
@@ -13,6 +13,13 @@ The node subscribes to `/cmd_vel`, converts linear/angular velocity into left/ri
 ```text
 /left_encoder_ticks
 /right_encoder_ticks
+```
+
+It also provides `wheel_odometry`, which subscribes to those encoder tick topics and publishes:
+
+```text
+/odom
+odom -> base_link
 ```
 
 First floor-safe run:
