@@ -6,7 +6,7 @@ Build:
 
 ```bash
 cd ~/Documents/mobile_robot_platform/ros2_ws
-colcon build --packages-select robot_base robot_bringup test_12
+colcon build --packages-select robot_base robot_bringup
 source install/setup.bash
 ```
 
@@ -22,8 +22,10 @@ Current floor-safe defaults:
 max_pwm = 100
 min_pwm = 85
 command_timeout_s = 0.15
+base wheel_base_m = 0.245
 ticks_per_revolution = 2800
 wheel_radius_m = 0.041
+odom wheel_base_m = 0.38
 ```
 
 Override an argument:
