@@ -7,6 +7,8 @@ base_serial_bridge:
     max_wheel_speed_mps: 0.10
     max_pwm: 100
     min_pwm: 85
+    left_pwm_scale: 1.0
+    right_pwm_scale: 0.90
     startup_delay_s: 2.5
 
 wheel_odometry:
