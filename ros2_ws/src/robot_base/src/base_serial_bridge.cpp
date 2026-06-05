@@ -3,6 +3,7 @@
 
 #include <geometry_msgs/msg/twist.hpp>
 #include <rclcpp/rclcpp.hpp>
+#include <std_msgs/msg/int32_multi_array.hpp>
 #include <std_msgs/msg/int64.hpp>
 
 #include <fcntl.h>
@@ -32,6 +33,7 @@ public:
   : Node("base_serial_bridge"), running_(true)
   {
     serial_port_ = this->declare_parameter<std::string>("serial_port", "/dev/ttyUSB0");
+    command_source_ = this->declare_parameter<std::string>("command_source", "cmd_vel");
     command_rate_hz_ = this->declare_parameter<double>("command_rate_hz", 20.0);
     command_timeout_s_ = this->declare_parameter<double>("command_timeout_s", 0.25);
     wheel_base_m_ = this->declare_parameter<double>("wheel_base_m", 0.16);
@@ -42,6 +44,7 @@ public:
     right_pwm_scale_ = this->declare_parameter<double>("right_pwm_scale", 1.0);
     linear_deadband_mps_ = this->declare_parameter<double>("linear_deadband_mps", 0.005);
     angular_deadband_rps_ = this->declare_parameter<double>("angular_deadband_rps", 0.01);
+    active_brake_on_stop_ = this->declare_parameter<bool>("active_brake_on_stop", true);
     startup_delay_s_ = this->declare_parameter<double>("startup_delay_s", 2.5);
 
     max_pwm_ = std::clamp(max_pwm_, 0, 255);
@@ -52,10 +55,18 @@ public:
     left_publisher_ = this->create_publisher<std_msgs::msg::Int64>("/left_encoder_ticks", 10);
     right_publisher_ = this->create_publisher<std_msgs::msg::Int64>("/right_encoder_ticks", 10);
 
-    subscription_ = this->create_subscription<geometry_msgs::msg::Twist>(
-      "/cmd_vel",
-      10,
-      std::bind(&BaseSerialBridgeNode::cmdVelCallback, this, std::placeholders::_1));
+    if (command_source_ == "wheel_pwm_cmd") {
+      pwm_subscription_ = this->create_subscription<std_msgs::msg::Int32MultiArray>(
+        "/wheel_pwm_cmd",
+        10,
+        std::bind(&BaseSerialBridgeNode::wheelPwmCallback, this, std::placeholders::_1));
+    } else {
+      command_source_ = "cmd_vel";
+      cmd_vel_subscription_ = this->create_subscription<geometry_msgs::msg::Twist>(
+        "/cmd_vel",
+        10,
+        std::bind(&BaseSerialBridgeNode::cmdVelCallback, this, std::placeholders::_1));
+    }
 
     openSerialPort();
 
@@ -71,6 +82,7 @@ public:
 
     RCLCPP_INFO(this->get_logger(), "Robot base serial bridge started.");
     RCLCPP_INFO(this->get_logger(), "Serial port: %s", serial_port_.c_str());
+    RCLCPP_INFO(this->get_logger(), "command_source = %s", command_source_.c_str());
     RCLCPP_INFO(this->get_logger(), "command_rate_hz = %.2f", command_rate_hz_);
     RCLCPP_INFO(this->get_logger(), "command_timeout_s = %.2f", command_timeout_s_);
     RCLCPP_INFO(this->get_logger(), "wheel_base_m = %.3f", wheel_base_m_);
@@ -79,6 +91,10 @@ public:
     RCLCPP_INFO(this->get_logger(), "min_pwm = %d", min_pwm_);
     RCLCPP_INFO(this->get_logger(), "left_pwm_scale = %.3f", left_pwm_scale_);
     RCLCPP_INFO(this->get_logger(), "right_pwm_scale = %.3f", right_pwm_scale_);
+    RCLCPP_INFO(
+      this->get_logger(),
+      "active_brake_on_stop = %s",
+      active_brake_on_stop_ ? "true" : "false");
     RCLCPP_INFO(this->get_logger(), "startup_delay_s = %.2f", startup_delay_s_);
   }
 
@@ -102,6 +118,7 @@ public:
 private:
   int serial_fd_ = -1;
   std::string serial_port_;
+  std::string command_source_;
   speed_t baud_rate_ = B115200;
 
   double command_rate_hz_;
@@ -114,12 +131,13 @@ private:
   double right_pwm_scale_;
   double linear_deadband_mps_;
   double angular_deadband_rps_;
+  bool active_brake_on_stop_;
   double startup_delay_s_;
 
   int target_left_pwm_ = 0;
   int target_right_pwm_ = 0;
-  int last_sent_left_pwm_ = 999;
-  int last_sent_right_pwm_ = 999;
+  int last_sent_left_pwm_ = 0;
+  int last_sent_right_pwm_ = 0;
   std::chrono::steady_clock::time_point last_cmd_vel_time_ = std::chrono::steady_clock::now();
   std::mutex command_mutex_;
 
@@ -127,7 +145,8 @@ private:
   std::thread read_thread_;
 
   rclcpp::TimerBase::SharedPtr command_timer_;
-  rclcpp::Subscription<geometry_msgs::msg::Twist>::SharedPtr subscription_;
+  rclcpp::Subscription<geometry_msgs::msg::Twist>::SharedPtr cmd_vel_subscription_;
+  rclcpp::Subscription<std_msgs::msg::Int32MultiArray>::SharedPtr pwm_subscription_;
   rclcpp::Publisher<std_msgs::msg::Int64>::SharedPtr left_publisher_;
   rclcpp::Publisher<std_msgs::msg::Int64>::SharedPtr right_publisher_;
 
@@ -202,6 +221,19 @@ private:
     last_cmd_vel_time_ = std::chrono::steady_clock::now();
   }
 
+  void wheelPwmCallback(const std_msgs::msg::Int32MultiArray::SharedPtr msg)
+  {
+    if (msg->data.size() < 2) {
+      RCLCPP_WARN(this->get_logger(), "Ignoring /wheel_pwm_cmd with fewer than 2 values.");
+      return;
+    }
+
+    std::lock_guard<std::mutex> lock(command_mutex_);
+    target_left_pwm_ = std::clamp(static_cast<int>(msg->data[0]), -max_pwm_, max_pwm_);
+    target_right_pwm_ = std::clamp(static_cast<int>(msg->data[1]), -max_pwm_, max_pwm_);
+    last_cmd_vel_time_ = std::chrono::steady_clock::now();
+  }
+
   std::pair<int, int> twistToPwm(const geometry_msgs::msg::Twist & twist) const
   {
     double linear_x = std::abs(twist.linear.x) < linear_deadband_mps_ ? 0.0 : twist.linear.x;
@@ -235,9 +267,15 @@ private:
 
   int scalePwm(int pwm, double scale) const
   {
-    const int scaled_pwm = static_cast<int>(
+    int scaled_pwm = static_cast<int>(
       std::lround(static_cast<double>(pwm) * scale));
-    return std::clamp(scaled_pwm, -max_pwm_, max_pwm_);
+    scaled_pwm = std::clamp(scaled_pwm, -max_pwm_, max_pwm_);
+
+    if (scaled_pwm != 0 && std::abs(scaled_pwm) < min_pwm_) {
+      return scaled_pwm > 0 ? min_pwm_ : -min_pwm_;
+    }
+
+    return scaled_pwm;
   }
 
   void sendCommandTimerCallback()
@@ -262,12 +300,17 @@ private:
     sendMotorCommand(left_pwm, right_pwm);
 
     if (timed_out && had_nonzero_command) {
-      RCLCPP_WARN(this->get_logger(), "cmd_vel timeout. Sending zero PWM.");
+      RCLCPP_WARN(this->get_logger(), "Command timeout. Stopping motors.");
     }
   }
 
   void sendMotorCommand(int left_pwm, int right_pwm)
   {
+    if (left_pwm == 0 && right_pwm == 0 && active_brake_on_stop_) {
+      sendStopCommand();
+      return;
+    }
+
     std::ostringstream line;
     line << "M " << left_pwm << " " << right_pwm;
 
@@ -282,6 +325,19 @@ private:
 
       last_sent_left_pwm_ = left_pwm;
       last_sent_right_pwm_ = right_pwm;
+    }
+  }
+
+  void sendStopCommand()
+  {
+    if (last_sent_left_pwm_ == 0 && last_sent_right_pwm_ == 0) {
+      return;
+    }
+
+    if (sendSerialLine("X")) {
+      RCLCPP_INFO(this->get_logger(), "Sent active brake stop command.");
+      last_sent_left_pwm_ = 0;
+      last_sent_right_pwm_ = 0;
     }
   }
 
