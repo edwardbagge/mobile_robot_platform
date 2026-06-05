@@ -27,9 +27,18 @@ ament_target_dependencies(
   tf2_ros
 )
 
+add_executable(wheel_velocity_controller src/wheel_velocity_controller.cpp)
+ament_target_dependencies(
+  wheel_velocity_controller
+  geometry_msgs
+  rclcpp
+  std_msgs
+)
+
 install(TARGETS
   base_serial_bridge
   wheel_odometry
+  wheel_velocity_controller
   DESTINATION lib/${PROJECT_NAME}
 )
 
