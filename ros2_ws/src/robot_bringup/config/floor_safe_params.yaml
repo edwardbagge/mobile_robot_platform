@@ -1,6 +1,7 @@
 base_serial_bridge:
   ros__parameters:
     serial_port: /dev/ttyUSB0
+    command_source: wheel_pwm_cmd
     command_rate_hz: 20.0
     command_timeout_s: 0.15
     wheel_base_m: 0.245
@@ -9,7 +10,20 @@ base_serial_bridge:
     min_pwm: 85
     left_pwm_scale: 1.0
     right_pwm_scale: 1.0
+    active_brake_on_stop: true
     startup_delay_s: 2.5
+
+wheel_velocity_controller:
+  ros__parameters:
+    controller_rate_hz: 20.0
+    command_timeout_s: 0.15
+    wheel_base_m: 0.245
+    max_wheel_speed_mps: 0.10
+    max_pwm: 100
+    min_pwm: 85
+    kp_pwm_per_mps: 120.0
+    linear_deadband_mps: 0.005
+    angular_deadband_rps: 0.01
 
 wheel_odometry:
   ros__parameters:
