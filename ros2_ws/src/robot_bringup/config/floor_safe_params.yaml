@@ -10,7 +10,7 @@ base_serial_bridge:
     min_pwm: 85
     left_pwm_scale: 1.0
     right_pwm_scale: 1.0
-    active_brake_on_stop: true
+    active_brake_on_stop: false
     startup_delay_s: 2.5
 
 wheel_velocity_controller:
