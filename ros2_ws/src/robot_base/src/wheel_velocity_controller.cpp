@@ -19,10 +19,12 @@ public:
   {
     controller_rate_hz_ = this->declare_parameter<double>("controller_rate_hz", 20.0);
     command_timeout_s_ = this->declare_parameter<double>("command_timeout_s", 0.25);
+    encoder_timeout_s_ = this->declare_parameter<double>("encoder_timeout_s", 0.25);
     wheel_base_m_ = this->declare_parameter<double>("wheel_base_m", 0.245);
     wheel_radius_m_ = this->declare_parameter<double>("wheel_radius_m", 0.041);
     ticks_per_revolution_ = this->declare_parameter<double>("ticks_per_revolution", 2800.0);
     max_wheel_speed_mps_ = this->declare_parameter<double>("max_wheel_speed_mps", 0.10);
+    max_tick_jump_scale_ = this->declare_parameter<double>("max_tick_jump_scale", 3.0);
     max_pwm_ = this->declare_parameter<int>("max_pwm", 100);
     min_pwm_ = this->declare_parameter<int>("min_pwm", 85);
     kp_pwm_per_mps_ = this->declare_parameter<double>("kp_pwm_per_mps", 120.0);
@@ -61,6 +63,8 @@ public:
     RCLCPP_INFO(this->get_logger(), "wheel_base_m = %.3f", wheel_base_m_);
     RCLCPP_INFO(this->get_logger(), "wheel_radius_m = %.3f", wheel_radius_m_);
     RCLCPP_INFO(this->get_logger(), "ticks_per_revolution = %.1f", ticks_per_revolution_);
+    RCLCPP_INFO(this->get_logger(), "encoder_timeout_s = %.2f", encoder_timeout_s_);
+    RCLCPP_INFO(this->get_logger(), "max_tick_jump_scale = %.2f", max_tick_jump_scale_);
     RCLCPP_INFO(this->get_logger(), "max_pwm = %d", max_pwm_);
     RCLCPP_INFO(this->get_logger(), "min_pwm = %d", min_pwm_);
     RCLCPP_INFO(this->get_logger(), "kp_pwm_per_mps = %.2f", kp_pwm_per_mps_);
@@ -69,10 +73,12 @@ public:
 private:
   double controller_rate_hz_;
   double command_timeout_s_;
+  double encoder_timeout_s_;
   double wheel_base_m_;
   double wheel_radius_m_;
   double ticks_per_revolution_;
   double max_wheel_speed_mps_;
+  double max_tick_jump_scale_;
   int max_pwm_;
   int min_pwm_;
   double kp_pwm_per_mps_;
@@ -91,6 +97,8 @@ private:
   bool right_ticks_received_ = false;
   bool velocity_initialized_ = false;
   rclcpp::Time last_control_time_{0, 0, RCL_ROS_TIME};
+  rclcpp::Time last_left_ticks_time_{0, 0, RCL_ROS_TIME};
+  rclcpp::Time last_right_ticks_time_{0, 0, RCL_ROS_TIME};
 
   std::mutex state_mutex_;
 
@@ -118,6 +126,7 @@ private:
     std::lock_guard<std::mutex> lock(state_mutex_);
     current_left_ticks_ = msg->data;
     left_ticks_received_ = true;
+    last_left_ticks_time_ = this->get_clock()->now();
   }
 
   void rightTicksCallback(const std_msgs::msg::Int64::SharedPtr msg)
@@ -125,6 +134,7 @@ private:
     std::lock_guard<std::mutex> lock(state_mutex_);
     current_right_ticks_ = msg->data;
     right_ticks_received_ = true;
+    last_right_ticks_time_ = this->get_clock()->now();
   }
 
   void controlTimerCallback()
@@ -134,43 +144,74 @@ private:
     double target_right_mps = 0.0;
     double actual_left_mps = 0.0;
     double actual_right_mps = 0.0;
+    bool publish_stop = false;
 
     {
       std::lock_guard<std::mutex> lock(state_mutex_);
 
       if (!left_ticks_received_ || !right_ticks_received_) {
-        publishPwmCommand(0, 0);
-        return;
+        publish_stop = true;
+      } else {
+        const bool encoder_timed_out =
+          (now - last_left_ticks_time_).seconds() > encoder_timeout_s_ ||
+          (now - last_right_ticks_time_).seconds() > encoder_timeout_s_;
+
+        if (encoder_timed_out) {
+          velocity_initialized_ = false;
+          publish_stop = true;
+          RCLCPP_WARN_THROTTLE(
+            this->get_logger(),
+            *this->get_clock(),
+            2000,
+            "Encoder feedback timed out. Stopping wheel controller output.");
+        } else if (!velocity_initialized_) {
+          last_left_ticks_ = current_left_ticks_;
+          last_right_ticks_ = current_right_ticks_;
+          last_control_time_ = now;
+          velocity_initialized_ = true;
+          publish_stop = true;
+        } else {
+          const double dt = (now - last_control_time_).seconds();
+          if (dt <= 0.0) {
+            return;
+          }
+
+          const int64_t delta_left_ticks = current_left_ticks_ - last_left_ticks_;
+          const int64_t delta_right_ticks = current_right_ticks_ - last_right_ticks_;
+
+          if (tickJumpLooksInvalid(delta_left_ticks, dt) || tickJumpLooksInvalid(delta_right_ticks, dt)) {
+            last_left_ticks_ = current_left_ticks_;
+            last_right_ticks_ = current_right_ticks_;
+            last_control_time_ = now;
+            publish_stop = true;
+            RCLCPP_WARN_THROTTLE(
+              this->get_logger(),
+              *this->get_clock(),
+              2000,
+              "Ignoring implausible encoder tick jump. Resetting controller velocity state.");
+          } else {
+            actual_left_mps = ticksToMeters(delta_left_ticks) / dt;
+            actual_right_mps = ticksToMeters(delta_right_ticks) / dt;
+
+            const bool timed_out =
+              (now - last_cmd_vel_time_).seconds() > command_timeout_s_;
+
+            if (!timed_out) {
+              target_left_mps = target_left_mps_;
+              target_right_mps = target_right_mps_;
+            }
+
+            last_left_ticks_ = current_left_ticks_;
+            last_right_ticks_ = current_right_ticks_;
+            last_control_time_ = now;
+          }
+        }
       }
+    }
 
-      if (!velocity_initialized_) {
-        last_left_ticks_ = current_left_ticks_;
-        last_right_ticks_ = current_right_ticks_;
-        last_control_time_ = now;
-        velocity_initialized_ = true;
-        publishPwmCommand(0, 0);
-        return;
-      }
-
-      const double dt = (now - last_control_time_).seconds();
-      if (dt <= 0.0) {
-        return;
-      }
-
-      actual_left_mps = ticksToMeters(current_left_ticks_ - last_left_ticks_) / dt;
-      actual_right_mps = ticksToMeters(current_right_ticks_ - last_right_ticks_) / dt;
-
-      const bool timed_out =
-        (now - last_cmd_vel_time_).seconds() > command_timeout_s_;
-
-      if (!timed_out) {
-        target_left_mps = target_left_mps_;
-        target_right_mps = target_right_mps_;
-      }
-
-      last_left_ticks_ = current_left_ticks_;
-      last_right_ticks_ = current_right_ticks_;
-      last_control_time_ = now;
+    if (publish_stop) {
+      publishPwmCommand(0, 0);
+      return;
     }
 
     const int left_pwm = computePwm(target_left_mps, actual_left_mps);
@@ -182,6 +223,18 @@ private:
   {
     return static_cast<double>(ticks) *
       (2.0 * M_PI * wheel_radius_m_) / ticks_per_revolution_;
+  }
+
+  bool tickJumpLooksInvalid(int64_t delta_ticks, double dt) const
+  {
+    if (dt <= 0.0 || ticks_per_revolution_ <= 0.0 || wheel_radius_m_ <= 0.0) {
+      return true;
+    }
+
+    const double max_ticks =
+      (std::abs(max_wheel_speed_mps_) * std::max(max_tick_jump_scale_, 1.0) * dt) /
+      ticksToMeters(1);
+    return static_cast<double>(std::abs(delta_ticks)) > std::max(1.0, max_ticks);
   }
 
   int feedforwardPwm(double target_mps) const

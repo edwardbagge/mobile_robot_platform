@@ -17,8 +17,10 @@ wheel_velocity_controller:
   ros__parameters:
     controller_rate_hz: 20.0
     command_timeout_s: 0.15
+    encoder_timeout_s: 0.25
     wheel_base_m: 0.245
     max_wheel_speed_mps: 0.10
+    max_tick_jump_scale: 3.0
     max_pwm: 100
     min_pwm: 85
     kp_pwm_per_mps: 240.0
@@ -31,5 +33,7 @@ wheel_odometry:
     ticks_per_revolution: 2800.0
     wheel_radius_m: 0.041
     wheel_base_m: 0.245
+    max_wheel_speed_mps: 0.10
+    max_tick_jump_scale: 3.0
     odom_frame_id: odom
     base_frame_id: base_link

@@ -19,6 +19,8 @@ public:
     ticks_per_revolution_ = this->declare_parameter<double>("ticks_per_revolution", 700.0);
     wheel_radius_m_ = this->declare_parameter<double>("wheel_radius_m", 0.03);
     wheel_base_m_ = this->declare_parameter<double>("wheel_base_m", 0.16);
+    max_wheel_speed_mps_ = this->declare_parameter<double>("max_wheel_speed_mps", 0.10);
+    max_tick_jump_scale_ = this->declare_parameter<double>("max_tick_jump_scale", 3.0);
     publish_tf_ = this->declare_parameter<bool>("publish_tf", true);
     publish_rate_hz_ = this->declare_parameter<double>("publish_rate_hz", 20.0);
     odom_frame_id_ = this->declare_parameter<std::string>("odom_frame_id", "odom");
@@ -51,6 +53,8 @@ public:
     RCLCPP_INFO(this->get_logger(), "ticks_per_revolution = %.3f", ticks_per_revolution_);
     RCLCPP_INFO(this->get_logger(), "wheel_radius_m = %.3f", wheel_radius_m_);
     RCLCPP_INFO(this->get_logger(), "wheel_base_m = %.3f", wheel_base_m_);
+    RCLCPP_INFO(this->get_logger(), "max_wheel_speed_mps = %.3f", max_wheel_speed_mps_);
+    RCLCPP_INFO(this->get_logger(), "max_tick_jump_scale = %.2f", max_tick_jump_scale_);
     RCLCPP_INFO(this->get_logger(), "publish_tf = %s", publish_tf_ ? "true" : "false");
   }
 
@@ -58,6 +62,8 @@ private:
   double ticks_per_revolution_;
   double wheel_radius_m_;
   double wheel_base_m_;
+  double max_wheel_speed_mps_;
+  double max_tick_jump_scale_;
   bool publish_tf_;
   double publish_rate_hz_;
   std::string odom_frame_id_;
@@ -118,6 +124,24 @@ private:
 
     const int64_t delta_left_ticks = current_left_ticks_ - last_processed_left_ticks_;
     const int64_t delta_right_ticks = current_right_ticks_ - last_processed_right_ticks_;
+
+    if (tickJumpLooksInvalid(delta_left_ticks, dt) || tickJumpLooksInvalid(delta_right_ticks, dt)) {
+      last_processed_left_ticks_ = current_left_ticks_;
+      last_processed_right_ticks_ = current_right_ticks_;
+      last_publish_time_ = now;
+
+      RCLCPP_WARN_THROTTLE(
+        this->get_logger(),
+        *this->get_clock(),
+        2000,
+        "Ignoring implausible encoder tick jump. Resetting odometry delta state.");
+
+      publishOdometryMessage(now, 0.0, 0.0);
+      if (publish_tf_) {
+        publishTransform(now);
+      }
+      return;
+    }
 
     const double meters_per_tick =
       (2.0 * M_PI * wheel_radius_m_) / ticks_per_revolution_;
@@ -194,6 +218,23 @@ private:
     msg.z = quaternion.z();
     msg.w = quaternion.w();
     return msg;
+  }
+
+  bool tickJumpLooksInvalid(int64_t delta_ticks, double dt) const
+  {
+    if (dt <= 0.0 || ticks_per_revolution_ <= 0.0 || wheel_radius_m_ <= 0.0) {
+      return true;
+    }
+
+    const double max_ticks =
+      (std::abs(max_wheel_speed_mps_) * std::max(max_tick_jump_scale_, 1.0) * dt) /
+      metersPerTick();
+    return static_cast<double>(std::abs(delta_ticks)) > std::max(1.0, max_ticks);
+  }
+
+  double metersPerTick() const
+  {
+    return (2.0 * M_PI * wheel_radius_m_) / ticks_per_revolution_;
   }
 
   double normalizeAngle(double angle_rad) const
