@@ -11,6 +11,8 @@
 //   FEEDBACK | LEFT ticks = ... | RIGHT ticks = ... | LEFT invalid = ... | RIGHT invalid = ...
 
 #include <ctype.h>
+#include <stdint.h>
+#include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 
@@ -41,10 +43,10 @@ const unsigned long FEEDBACK_INTERVAL_MS = 50;
 const size_t SERIAL_COMMAND_BUFFER_SIZE = 64;
 
 // ---------- Encoder counters ----------
-volatile long leftTicks = 0;
-volatile long rightTicks = 0;
-volatile long leftInvalidTransitions = 0;
-volatile long rightInvalidTransitions = 0;
+volatile int64_t leftTicks = 0;
+volatile int64_t rightTicks = 0;
+volatile int64_t leftInvalidTransitions = 0;
+volatile int64_t rightInvalidTransitions = 0;
 volatile uint8_t leftEncoderState = 0;
 volatile uint8_t rightEncoderState = 0;
 
@@ -58,6 +60,14 @@ unsigned long lastFeedbackTime = 0;
 char serialCommandBuffer[SERIAL_COMMAND_BUFFER_SIZE];
 size_t serialCommandLength = 0;
 bool serialCommandOverflow = false;
+
+struct EncoderSnapshot
+{
+  int64_t leftTicks;
+  int64_t rightTicks;
+  int64_t leftInvalidTransitions;
+  int64_t rightInvalidTransitions;
+};
 
 // ---------- Encoder interrupt functions ----------
 uint8_t IRAM_ATTR readEncoderState(int pinA, int pinB)
@@ -243,20 +253,16 @@ void applyMotorCommand(int leftPwm, int rightPwm)
 }
 
 // ---------- Encoder helper functions ----------
-void getEncoderCounts(long &leftCount, long &rightCount)
+EncoderSnapshot getEncoderSnapshot()
 {
+  EncoderSnapshot snapshot;
   noInterrupts();
-  leftCount = leftTicks;
-  rightCount = rightTicks;
+  snapshot.leftTicks = leftTicks;
+  snapshot.rightTicks = rightTicks;
+  snapshot.leftInvalidTransitions = leftInvalidTransitions;
+  snapshot.rightInvalidTransitions = rightInvalidTransitions;
   interrupts();
-}
-
-void getInvalidTransitionCounts(long &leftInvalid, long &rightInvalid)
-{
-  noInterrupts();
-  leftInvalid = leftInvalidTransitions;
-  rightInvalid = rightInvalidTransitions;
-  interrupts();
+  return snapshot;
 }
 
 void resetEncoderCounts()
@@ -275,22 +281,19 @@ void resetEncoderCounts()
 
 void printEncoderFeedback()
 {
-  long currentLeftTicks;
-  long currentRightTicks;
-  long currentLeftInvalid;
-  long currentRightInvalid;
+  const EncoderSnapshot snapshot = getEncoderSnapshot();
+  char feedbackLine[160];
 
-  getEncoderCounts(currentLeftTicks, currentRightTicks);
-  getInvalidTransitionCounts(currentLeftInvalid, currentRightInvalid);
+  snprintf(
+    feedbackLine,
+    sizeof(feedbackLine),
+    "FEEDBACK | LEFT ticks = %lld | RIGHT ticks = %lld | LEFT invalid = %lld | RIGHT invalid = %lld",
+    static_cast<long long>(snapshot.leftTicks),
+    static_cast<long long>(snapshot.rightTicks),
+    static_cast<long long>(snapshot.leftInvalidTransitions),
+    static_cast<long long>(snapshot.rightInvalidTransitions));
 
-  Serial.print("FEEDBACK | LEFT ticks = ");
-  Serial.print(currentLeftTicks);
-  Serial.print(" | RIGHT ticks = ");
-  Serial.print(currentRightTicks);
-  Serial.print(" | LEFT invalid = ");
-  Serial.print(currentLeftInvalid);
-  Serial.print(" | RIGHT invalid = ");
-  Serial.println(currentRightInvalid);
+  Serial.println(feedbackLine);
 }
 
 void printStatus()
@@ -383,26 +386,13 @@ void handleCommand(const char *rawCommand)
     return;
   }
 
-  char *commandStart = nullptr;
-  for (char *cursor = command; *cursor != '\0'; cursor++)
-  {
-    char c = static_cast<char>(toupper(static_cast<unsigned char>(*cursor)));
-    if (c == 'M' || c == 'X' || c == 'Z' || c == 'S')
-    {
-      commandStart = cursor;
-      break;
-    }
-  }
-
-  if (commandStart == nullptr)
+  char commandType = static_cast<char>(toupper(static_cast<unsigned char>(command[0])));
+  if (commandType != 'M' && commandType != 'X' && commandType != 'Z' && commandType != 'S')
   {
     Serial.print("Ignored serial noise: ");
     Serial.println(command);
     return;
   }
-
-  command = trimWhitespace(commandStart);
-  char commandType = static_cast<char>(toupper(static_cast<unsigned char>(command[0])));
 
   if (commandType == 'M' || commandType == 'm')
   {
