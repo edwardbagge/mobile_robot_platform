@@ -16,7 +16,13 @@ def generate_launch_description():
     return LaunchDescription(
         [
             LogInfo(msg='Starting complete robot bringup.'),
-            IncludeLaunchDescription(PythonLaunchDescriptionSource(base_launch)),
-            IncludeLaunchDescription(PythonLaunchDescriptionSource(lidar_launch)),
+            IncludeLaunchDescription(
+                PythonLaunchDescriptionSource(base_launch),
+                launch_arguments={'serial_port': '/dev/robot_base'}.items(),
+            ),
+            IncludeLaunchDescription(
+                PythonLaunchDescriptionSource(lidar_launch),
+                launch_arguments={'serial_port': '/dev/rplidar'}.items(),
+            ),
         ]
     )
