@@ -45,7 +45,7 @@ rplidar:
     frame_id: laser
     inverted: false
     angle_compensate: true
-    scan_mode: Sensitivity
+    scan_mode: ""
 
 laser_static_transform:
   ros__parameters:
