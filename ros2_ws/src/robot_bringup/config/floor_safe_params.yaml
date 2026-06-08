@@ -1,6 +1,6 @@
 base_serial_bridge:
   ros__parameters:
-    serial_port: /dev/ttyUSB0
+    serial_port: /dev/robot_base
     command_source: wheel_pwm_cmd
     command_rate_hz: 20.0
     command_timeout_s: 0.15
@@ -37,3 +37,12 @@ wheel_odometry:
     max_tick_jump_scale: 3.0
     odom_frame_id: odom
     base_frame_id: base_link
+
+rplidar:
+  ros__parameters:
+    serial_port: /dev/rplidar
+    serial_baudrate: 115200
+    frame_id: laser
+    inverted: false
+    angle_compensate: true
+    scan_mode: Sensitivity
