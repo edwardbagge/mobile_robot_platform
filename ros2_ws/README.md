@@ -71,14 +71,19 @@ source /opt/ros/jazzy/setup.bash
 colcon build --packages-select robot_base robot_bringup rplidar_ros
 source install/setup.bash
 
+ls -l /dev/robot_base /dev/rplidar
+
 ros2 launch robot_bringup robot.launch.py
 ```
 
-If `/dev/robot_base` or `/dev/rplidar` do not exist, pass the real serial devices:
+The Raspberry Pi uses stable device aliases defined outside this workspace:
 
 ```bash
-ros2 launch robot_bringup robot.launch.py base_serial_port:=/dev/ttyACM0 lidar_serial_port:=/dev/ttyUSB0
+/dev/robot_base
+/dev/rplidar
 ```
+
+These match `floor_safe_params.yaml` and the launch defaults. Do not replace them with temporary kernel-assigned serial device names in normal use. If either alias is missing, fix the Raspberry Pi udev/device setup before launching the robot stack.
 
 Run basic checks in terminal 2:
 
