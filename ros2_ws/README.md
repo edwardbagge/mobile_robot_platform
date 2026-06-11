@@ -63,13 +63,18 @@ sudo usermod -aG dialout $USER
 
 Log out and back in after changing groups.
 
-Build the workspace:
+Use this clean-start mapping sequence. Only run `mapping.launch.py`; do not run `robot.launch.py` or `slam.launch.py` separately.
+
+Terminal 1: build and start mapping:
 
 ```bash
 cd ~/Documents/mobile_robot_platform/ros2_ws
 source /opt/ros/jazzy/setup.bash
 colcon build --packages-select robot_base robot_bringup rplidar_ros
 source install/setup.bash
+mkdir -p maps
+ls -l /dev/robot_base /dev/rplidar
+ros2 launch robot_bringup mapping.launch.py
 ```
 
 The Raspberry Pi uses stable device aliases defined outside this workspace:
@@ -81,26 +86,11 @@ The Raspberry Pi uses stable device aliases defined outside this workspace:
 
 These match `floor_safe_params.yaml` and the launch defaults. Do not replace them with temporary kernel-assigned serial device names in normal use. If either alias is missing, fix the Raspberry Pi udev/device setup before launching the robot stack.
 
-Check the device aliases before launching:
+Terminal 2: optional basic checks:
 
 ```bash
-ls -l /dev/robot_base /dev/rplidar
-```
-
-Choose one mapping launch method only.
-
-Start robot bring-up and SLAM together in terminal 1:
-
-```bash
-ros2 launch robot_bringup mapping.launch.py
-```
-
-This already starts the robot drivers, odometry, lidar, static transforms, and SLAM. Do not start any other robot or SLAM launch file at the same time.
-
-Run basic checks in terminal 2:
-
-```bash
-source ~/Documents/mobile_robot_platform/ros2_ws/install/setup.bash
+cd ~/Documents/mobile_robot_platform/ros2_ws
+source install/setup.bash
 
 ros2 topic echo /scan --once
 ros2 topic hz /odom
@@ -108,17 +98,28 @@ ros2 run tf2_ros tf2_echo odom base_link
 ros2 run tf2_ros tf2_echo base_link laser
 ```
 
-Drive the robot slowly while mapping:
+Terminal 2: drive the robot slowly while mapping:
 
 ```bash
+cd ~/Documents/mobile_robot_platform/ros2_ws
+source install/setup.bash
 ros2 run teleop_twist_keyboard teleop_twist_keyboard
 ```
 
-Save the generated map:
+Terminal 3: save the generated map:
 
 ```bash
-mkdir -p ~/maps
-ros2 service call /slam_toolbox/save_map slam_toolbox/srv/SaveMap "{name: {data: '/home/wingman/maps/floor1'}}"
+cd ~/Documents/mobile_robot_platform/ros2_ws
+source install/setup.bash
+mkdir -p maps
+ros2 run nav2_map_server map_saver_cli -f "$PWD/maps/floor1" --ros-args -p map_subscribe_transient_local:=true -p save_map_timeout:=30.0
+```
+
+Check that the map files were written:
+
+```bash
+cd ~/Documents/mobile_robot_platform/ros2_ws
+ls -l maps
 ```
 
 For a first Nav2 test while SLAM is still running:
@@ -130,7 +131,7 @@ ros2 launch robot_bringup nav2_navigation.launch.py
 For Nav2 localization and navigation from a saved map:
 
 ```bash
-ros2 launch robot_bringup nav2_map.launch.py map:=$HOME/maps/floor1.yaml
+ros2 launch robot_bringup nav2_map.launch.py map:=$HOME/Documents/mobile_robot_platform/ros2_ws/maps/floor1.yaml
 ```
 
 Before relying on Nav2, add a robot-specific `nav2_params.yaml` for this platform. Tune robot radius or footprint, max velocity around `0.08-0.10 m/s`, acceleration limits, `/scan`, `/odom`, `base_link`, and costmap inflation. The current bring-up config publishes wheel odometry at `20.0 Hz` for Nav2.
