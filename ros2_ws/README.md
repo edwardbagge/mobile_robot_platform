@@ -89,30 +89,13 @@ ls -l /dev/robot_base /dev/rplidar
 
 Choose one mapping launch method only.
 
-Recommended: start robot bring-up and SLAM together in terminal 1:
+Start robot bring-up and SLAM together in terminal 1:
 
 ```bash
 ros2 launch robot_bringup mapping.launch.py
 ```
 
-This already starts `robot.launch.py` and `slam.launch.py`. Do not also launch either of those separately.
-
-Alternative split launch for debugging only:
-
-Terminal 1:
-
-```bash
-ros2 launch robot_bringup robot.launch.py
-```
-
-Terminal 3:
-
-```bash
-cd ~/Documents/mobile_robot_platform/ros2_ws
-source install/setup.bash
-
-ros2 launch robot_bringup slam.launch.py
-```
+This already starts the robot drivers, odometry, lidar, static transforms, and SLAM. Do not start any other robot or SLAM launch file at the same time.
 
 Run basic checks in terminal 2:
 
