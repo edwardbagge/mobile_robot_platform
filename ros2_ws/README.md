@@ -63,17 +63,13 @@ sudo usermod -aG dialout $USER
 
 Log out and back in after changing groups.
 
-Build and launch the full robot stack in terminal 1:
+Build the workspace:
 
 ```bash
 cd ~/Documents/mobile_robot_platform/ros2_ws
 source /opt/ros/jazzy/setup.bash
 colcon build --packages-select robot_base robot_bringup rplidar_ros
 source install/setup.bash
-
-ls -l /dev/robot_base /dev/rplidar
-
-ros2 launch robot_bringup robot.launch.py
 ```
 
 The Raspberry Pi uses stable device aliases defined outside this workspace:
@@ -84,6 +80,39 @@ The Raspberry Pi uses stable device aliases defined outside this workspace:
 ```
 
 These match `floor_safe_params.yaml` and the launch defaults. Do not replace them with temporary kernel-assigned serial device names in normal use. If either alias is missing, fix the Raspberry Pi udev/device setup before launching the robot stack.
+
+Check the device aliases before launching:
+
+```bash
+ls -l /dev/robot_base /dev/rplidar
+```
+
+Choose one mapping launch method only.
+
+Recommended: start robot bring-up and SLAM together in terminal 1:
+
+```bash
+ros2 launch robot_bringup mapping.launch.py
+```
+
+This already starts `robot.launch.py` and `slam.launch.py`. Do not also launch either of those separately.
+
+Alternative split launch for debugging only:
+
+Terminal 1:
+
+```bash
+ros2 launch robot_bringup robot.launch.py
+```
+
+Terminal 3:
+
+```bash
+cd ~/Documents/mobile_robot_platform/ros2_ws
+source install/setup.bash
+
+ros2 launch robot_bringup slam.launch.py
+```
 
 Run basic checks in terminal 2:
 
@@ -96,21 +125,6 @@ ros2 run tf2_ros tf2_echo odom base_link
 ros2 run tf2_ros tf2_echo base_link laser
 ```
 
-Start online SLAM in terminal 3:
-
-```bash
-cd ~/Documents/mobile_robot_platform/ros2_ws
-source install/setup.bash
-
-ros2 launch robot_bringup slam.launch.py
-```
-
-Alternatively, start robot bring-up and SLAM together:
-
-```bash
-ros2 launch robot_bringup mapping.launch.py
-```
-
 Drive the robot slowly while mapping:
 
 ```bash
@@ -121,7 +135,7 @@ Save the generated map:
 
 ```bash
 mkdir -p ~/maps
-ros2 run nav2_map_server map_saver_cli -f ~/maps/floor1
+ros2 service call /slam_toolbox/save_map slam_toolbox/srv/SaveMap "{name: {data: '/home/wingman/maps/floor1'}}"
 ```
 
 For a first Nav2 test while SLAM is still running:
