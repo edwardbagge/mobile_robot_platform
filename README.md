@@ -25,3 +25,8 @@ Custom hardware:
 1) Chassis
 2) Elevated platform for Lidar
 3) Holders for motors
+
+ROS 2 notes:
+
+1) `ros2_ws/src/robot_bringup/config/floor_safe_params.yaml` is the main bringup parameter file for the base and lidar stack.
+2) `ros2_ws/src/robot_bringup/config/slam_params.yaml` contains the current `slam_toolbox` parameters.

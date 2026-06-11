@@ -1,5 +1,6 @@
 .vscode/
 .codex
+.agents
 
 ros2_ws/build
 ros2_ws/install
