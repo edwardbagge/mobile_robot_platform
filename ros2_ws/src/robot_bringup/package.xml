@@ -11,8 +11,10 @@
 
   <exec_depend>launch</exec_depend>
   <exec_depend>launch_ros</exec_depend>
+  <exec_depend>nav2_bringup</exec_depend>
   <exec_depend>robot_base</exec_depend>
   <exec_depend>rplidar_ros</exec_depend>
+  <exec_depend>slam_toolbox</exec_depend>
   <exec_depend>tf2_ros</exec_depend>
 
   <test_depend>ament_lint_auto</test_depend>

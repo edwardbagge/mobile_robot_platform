@@ -97,7 +97,13 @@ Start online SLAM in terminal 3:
 cd ~/Documents/mobile_robot_platform/ros2_ws
 source install/setup.bash
 
-ros2 launch slam_toolbox online_async_launch.py slam_params_file:=$PWD/src/robot_bringup/config/slam_params.yaml use_sim_time:=false
+ros2 launch robot_bringup slam.launch.py
+```
+
+Alternatively, start robot bring-up and SLAM together:
+
+```bash
+ros2 launch robot_bringup mapping.launch.py
 ```
 
 Drive the robot slowly while mapping:
@@ -116,16 +122,16 @@ ros2 run nav2_map_server map_saver_cli -f ~/maps/floor1
 For a first Nav2 test while SLAM is still running:
 
 ```bash
-ros2 launch nav2_bringup navigation_launch.py use_sim_time:=false
+ros2 launch robot_bringup nav2_navigation.launch.py
 ```
 
 For Nav2 localization and navigation from a saved map:
 
 ```bash
-ros2 launch nav2_bringup bringup_launch.py use_sim_time:=false map:=$HOME/maps/floor1.yaml
+ros2 launch robot_bringup nav2_map.launch.py map:=$HOME/maps/floor1.yaml
 ```
 
-Before relying on Nav2, add a robot-specific `nav2_params.yaml` for this platform. Tune robot radius or footprint, max velocity around `0.08-0.10 m/s`, acceleration limits, `/scan`, `/odom`, `base_link`, and costmap inflation. The current `wheel_odometry.publish_rate_hz` is `2.0`; Nav2 should be tested with about `20.0 Hz`.
+Before relying on Nav2, add a robot-specific `nav2_params.yaml` for this platform. Tune robot radius or footprint, max velocity around `0.08-0.10 m/s`, acceleration limits, `/scan`, `/odom`, `base_link`, and costmap inflation. The current bring-up config publishes wheel odometry at `20.0 Hz` for Nav2.
 
 ## Base topic flow
 
@@ -162,7 +168,9 @@ The main related parameters are:
 ## Main files
 
 - Launch: [src/robot_bringup/launch/base_odom.launch.py](/home/edward/Documents/mobile_robot_platform/ros2_ws/src/robot_bringup/launch/base_odom.launch.py:1)
+- Mapping launch: [src/robot_bringup/launch/mapping.launch.py](/home/edward/Documents/mobile_robot_platform/ros2_ws/src/robot_bringup/launch/mapping.launch.py:1)
 - Base params: [src/robot_bringup/config/floor_safe_params.yaml](/home/edward/Documents/mobile_robot_platform/ros2_ws/src/robot_bringup/config/floor_safe_params.yaml:1)
+- SLAM params: [src/robot_bringup/config/slam_params.yaml](/home/edward/Documents/mobile_robot_platform/ros2_ws/src/robot_bringup/config/slam_params.yaml:1)
 - Serial bridge: [src/robot_base/src/base_serial_bridge.cpp](/home/edward/Documents/mobile_robot_platform/ros2_ws/src/robot_base/src/base_serial_bridge.cpp:1)
 - Velocity controller: [src/robot_base/src/wheel_velocity_controller.cpp](/home/edward/Documents/mobile_robot_platform/ros2_ws/src/robot_base/src/wheel_velocity_controller.cpp:1)
 - Odometry: [src/robot_base/src/wheel_odometry.cpp](/home/edward/Documents/mobile_robot_platform/ros2_ws/src/robot_base/src/wheel_odometry.cpp:1)

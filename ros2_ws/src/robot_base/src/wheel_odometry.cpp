@@ -6,6 +6,7 @@
 #include <tf2/LinearMath/Quaternion.h>
 #include <tf2_ros/transform_broadcaster.h>
 
+#include <algorithm>
 #include <cmath>
 #include <memory>
 #include <string>
@@ -23,6 +24,7 @@ public:
     max_tick_jump_scale_ = this->declare_parameter<double>("max_tick_jump_scale", 3.0);
     publish_tf_ = this->declare_parameter<bool>("publish_tf", true);
     publish_rate_hz_ = this->declare_parameter<double>("publish_rate_hz", 20.0);
+    publish_rate_hz_ = std::max(publish_rate_hz_, 1.0);
     odom_frame_id_ = this->declare_parameter<std::string>("odom_frame_id", "odom");
     base_frame_id_ = this->declare_parameter<std::string>("base_frame_id", "base_link");
 

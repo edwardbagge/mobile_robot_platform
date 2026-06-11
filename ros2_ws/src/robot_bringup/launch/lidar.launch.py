@@ -10,17 +10,14 @@ def _load_lidar_defaults(params_path):
     with open(params_path, 'r', encoding='utf-8') as params_file:
         all_params = yaml.safe_load(params_file)
 
-    return (
-        all_params['rplidar']['ros__parameters'],
-        all_params['laser_static_transform']['ros__parameters'],
-    )
+    return all_params['laser_static_transform']['ros__parameters']
 
 
 def _launch_setup(context):
     params_file = LaunchConfiguration('params_file')
     lidar_serial_port = LaunchConfiguration('lidar_serial_port')
     params_path = params_file.perform(context)
-    _, tf_defaults = _load_lidar_defaults(params_path)
+    tf_defaults = _load_lidar_defaults(params_path)
 
     return [
         LogInfo(

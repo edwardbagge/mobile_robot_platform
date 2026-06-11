@@ -19,6 +19,8 @@ wheel_velocity_controller:
     command_timeout_s: 0.15
     encoder_timeout_s: 0.25
     wheel_base_m: 0.245
+    wheel_radius_m: 0.041
+    ticks_per_revolution: 2800.0
     max_wheel_speed_mps: 0.10
     max_tick_jump_scale: 3.0
     max_pwm: 100
@@ -29,7 +31,7 @@ wheel_velocity_controller:
 
 wheel_odometry:
   ros__parameters:
-    publish_rate_hz: 2.0
+    publish_rate_hz: 20.0
     ticks_per_revolution: 2800.0
     wheel_radius_m: 0.041
     wheel_base_m: 0.245
@@ -38,7 +40,7 @@ wheel_odometry:
     odom_frame_id: odom
     base_frame_id: base_link
 
-rplidar:
+rplidar_node:
   ros__parameters:
     serial_port: /dev/rplidar
     serial_baudrate: 115200
