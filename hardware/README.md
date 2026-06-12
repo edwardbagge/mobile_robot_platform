@@ -1,0 +1,26 @@
+# Custom hardware for the robot
+
+Market hardware:
+
+1) Slamtec RPLIDAR 360deg Laser Scanner Development Kit (A2M8)
+3) Raspberry Pi 5 8GB
+4) Geared 12V DC Motor (x2) [DFRobot product page](https://www.dfrobot.com/product-634.html)
+5) [Adafruit HUZZAH32 ESP32 Feather](https://www.adafruit.com/product/3405) and [Adafruit HUZZAH32 ESP32 Feather guide](https://learn.adafruit.com/adafruit-huzzah32-esp32-feather)
+6) [L298N motor driver](https://www.kouluelektroniikka.fi/tuote/ohjelmoitava-elektroniikka/moduulit/moottorinohjaimet/4615220/moottoriohjain-l298n)
+7) [3S LiPo battery](https://www.akkuasiantuntija.fi/fi/artiklar/li-po-3s-111v-30c-2-200-mah-t-kontakti-vapex.html)
+8) Multiple Wago connectors, jumper wires, 3mm bolts; nuts; washers, double-sided tape, zip-ties, and other "prototyping"-stuff
+9) Breadboard
+10) Levelshifter (5V/3.3V)
+11) [Mounting hub](https://partco.shop/product/axle-adapter-6-25-4mm-m3-4004) (part that is attached to 6mm motor-shaft)
+
+Custom hardware:
+
+1) Chassis
+2) Elevated platform for Lidar
+3) Holders for motors
+4) Connectors between motor mounting hub and Lego rims
+
+ROS 2 notes:
+
+1) `ros2_ws/src/robot_bringup/config/floor_safe_params.yaml` is the main bringup parameter file for the base and lidar stack.
+2) `ros2_ws/src/robot_bringup/config/slam_params.yaml` contains the current `slam_toolbox` parameters.
