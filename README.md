@@ -18,6 +18,7 @@ Custom hardware:
 1) Chassis
 2) Elevated platform for Lidar
 3) Holders for motors
+4) Connectors between motor mounting hub and Lego rims
 
 ROS 2 notes:
 
