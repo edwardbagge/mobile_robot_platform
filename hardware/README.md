@@ -1,4 +1,4 @@
-# Custom hardware for the robot
+# Hardware for the robot
 
 Market hardware:
 
@@ -12,6 +12,7 @@ Market hardware:
 9) Breadboard
 10) Levelshifter (5V/3.3V)
 11) [Mounting hub](https://partco.shop/product/axle-adapter-6-25-4mm-m3-4004) (part that is attached to 6mm motor-shaft)
+12) Lego Technic 8069 rims and backwheels (or similar)
 
 Custom hardware:
 
