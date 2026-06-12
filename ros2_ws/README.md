@@ -16,11 +16,11 @@ Launch and parameter files for the base, lidar, SLAM mapping, and navigation bri
 `rplidar_ros`
 RPLIDAR driver package.
 
-`simple_publisher`, `simple_subscriber`
+`learning/simple_publisher`, `learning/simple_subscriber`
 Small ROS 2 learning / smoke-test packages.
 
-`test_09` to `test_13`
-Historical milestone packages kept for reference.
+`experiments/test_09` to `experiments/test_13`
+Historical ROS 2 milestone packages kept for reference. These are separate from the top-level `testing/` folder, which contains manual non-ROS hardware bring-up tests.
 
 ## Current base bring-up
 

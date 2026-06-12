@@ -83,18 +83,15 @@ public:
   {
     running_ = false;
 
-    if (serial_fd_ >= 0)
-    {
+    if (serial_fd_ >= 0) {
       sendSerialCommand("x");
     }
 
-    if (read_thread_.joinable())
-    {
+    if (read_thread_.joinable()) {
       read_thread_.join();
     }
 
-    if (serial_fd_ >= 0)
-    {
+    if (serial_fd_ >= 0) {
       close(serial_fd_);
     }
   }
@@ -119,8 +116,7 @@ private:
   {
     serial_fd_ = open(serial_port_.c_str(), O_RDWR | O_NOCTTY | O_NONBLOCK);
 
-    if (serial_fd_ < 0)
-    {
+    if (serial_fd_ < 0) {
       RCLCPP_ERROR(
         this->get_logger(),
         "Failed to open serial port: %s",
@@ -132,8 +128,7 @@ private:
     termios tty;
     memset(&tty, 0, sizeof tty);
 
-    if (tcgetattr(serial_fd_, &tty) != 0)
-    {
+    if (tcgetattr(serial_fd_, &tty) != 0) {
       RCLCPP_ERROR(this->get_logger(), "Failed to get serial port attributes.");
       close(serial_fd_);
       serial_fd_ = -1;
@@ -157,8 +152,7 @@ private:
     tty.c_cc[VMIN] = 0;
     tty.c_cc[VTIME] = 1;
 
-    if (tcsetattr(serial_fd_, TCSANOW, &tty) != 0)
-    {
+    if (tcsetattr(serial_fd_, TCSANOW, &tty) != 0) {
       RCLCPP_ERROR(this->get_logger(), "Failed to set serial port attributes.");
       close(serial_fd_);
       serial_fd_ = -1;
@@ -172,10 +166,8 @@ private:
   {
     std::string command = twistToCommand(*msg);
 
-    if (!suppress_repeated_commands_ || command != last_sent_command_)
-    {
-      if (sendSerialCommand(command))
-      {
+    if (!suppress_repeated_commands_ || command != last_sent_command_) {
+      if (sendSerialCommand(command)) {
         last_sent_command_ = command;
       }
     }
@@ -187,30 +179,21 @@ private:
     double angular_z = twist.angular.z;
 
     if (std::abs(linear_x) < linear_threshold_ &&
-        std::abs(angular_z) < angular_threshold_)
+      std::abs(angular_z) < angular_threshold_)
     {
       return "x";
     }
 
-    if (std::abs(linear_x) >= std::abs(angular_z))
-    {
-      if (linear_x > linear_threshold_)
-      {
+    if (std::abs(linear_x) >= std::abs(angular_z)) {
+      if (linear_x > linear_threshold_) {
         return "f";
-      }
-      else if (linear_x < -linear_threshold_)
-      {
+      } else if (linear_x < -linear_threshold_) {
         return "b";
       }
-    }
-    else
-    {
-      if (angular_z > angular_threshold_)
-      {
+    } else {
+      if (angular_z > angular_threshold_) {
         return "l";
-      }
-      else if (angular_z < -angular_threshold_)
-      {
+      } else if (angular_z < -angular_threshold_) {
         return "r";
       }
     }
@@ -220,8 +203,7 @@ private:
 
   bool sendSerialCommand(const std::string & command)
   {
-    if (serial_fd_ < 0)
-    {
+    if (serial_fd_ < 0) {
       RCLCPP_ERROR(this->get_logger(), "Serial port is not open.");
       return false;
     }
@@ -234,8 +216,7 @@ private:
       command_with_newline.length()
     );
 
-    if (bytes_written < 0)
-    {
+    if (bytes_written < 0) {
       RCLCPP_ERROR(this->get_logger(), "Failed to write command to serial port.");
       return false;
     }
@@ -249,21 +230,17 @@ private:
     char buffer[256];
     std::string line_buffer;
 
-    while (running_)
-    {
-      if (serial_fd_ >= 0)
-      {
+    while (running_) {
+      if (serial_fd_ >= 0) {
         int bytes_read = read(serial_fd_, buffer, sizeof(buffer) - 1);
 
-        if (bytes_read > 0)
-        {
+        if (bytes_read > 0) {
           buffer[bytes_read] = '\0';
           line_buffer += std::string(buffer);
 
           size_t newline_position;
 
-          while ((newline_position = line_buffer.find('\n')) != std::string::npos)
-          {
+          while ((newline_position = line_buffer.find('\n')) != std::string::npos) {
             std::string line = line_buffer.substr(0, newline_position);
             line_buffer.erase(0, newline_position + 1);
 
@@ -279,13 +256,11 @@ private:
   void parseLine(const std::string & raw_line)
   {
     std::string line = raw_line;
-    if (!line.empty() && line.back() == '\r')
-    {
+    if (!line.empty() && line.back() == '\r') {
       line.pop_back();
     }
 
-    if (line.empty())
-    {
+    if (line.empty()) {
       return;
     }
 
@@ -297,8 +272,7 @@ private:
 
     std::smatch match;
 
-    if (std::regex_search(line, match, feedback_regex))
-    {
+    if (std::regex_search(line, match, feedback_regex)) {
       long left_ticks = std::stol(match[1].str());
       long right_ticks = std::stol(match[2].str());
 
