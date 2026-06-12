@@ -25,19 +25,19 @@ def generate_launch_description():
             DeclareLaunchArgument(
                 'params_file',
                 default_value=default_params_file,
-                description='Shared robot bringup parameter file.',
+                description='Shared base and lidar parameter file.',
             ),
             DeclareLaunchArgument(
                 'base_serial_port',
                 default_value='/dev/robot_base',
-                description='ESP32 USB serial device.',
+                description='Stable ESP32 base serial device.',
             ),
             DeclareLaunchArgument(
                 'lidar_serial_port',
                 default_value='/dev/rplidar',
-                description='RPLIDAR USB serial device.',
+                description='Stable RPLIDAR serial device.',
             ),
-            LogInfo(msg='Starting complete robot bringup.'),
+            LogInfo(msg='Starting robot base and lidar bringup.'),
             IncludeLaunchDescription(
                 PythonLaunchDescriptionSource(base_launch),
                 launch_arguments={

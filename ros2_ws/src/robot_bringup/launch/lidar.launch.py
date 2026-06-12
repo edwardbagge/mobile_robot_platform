@@ -6,23 +6,89 @@ from launch_ros.substitutions import FindPackageShare
 import yaml
 
 
-def _load_lidar_defaults(params_path):
-    with open(params_path, 'r', encoding='utf-8') as params_file:
-        all_params = yaml.safe_load(params_file)
+LASER_STATIC_TRANSFORM_KEYS = (
+    'x',
+    'y',
+    'z',
+    'roll',
+    'pitch',
+    'yaw',
+    'parent_frame_id',
+    'child_frame_id',
+)
 
-    return all_params['laser_static_transform']['ros__parameters']
+
+def _load_laser_static_transform(params_path):
+    try:
+        with open(params_path, 'r', encoding='utf-8') as params_file:
+            all_params = yaml.safe_load(params_file) or {}
+    except OSError as exc:
+        raise RuntimeError(
+            f'Unable to read lidar parameter file "{params_path}": {exc}'
+        ) from exc
+    except yaml.YAMLError as exc:
+        raise RuntimeError(
+            f'Invalid YAML in lidar parameter file "{params_path}": {exc}'
+        ) from exc
+
+    transform_node = all_params.get('laser_static_transform')
+    if not isinstance(transform_node, dict):
+        raise RuntimeError(
+            f'Lidar parameter file "{params_path}" must define '
+            'laser_static_transform.ros__parameters.'
+        )
+
+    transform_params = transform_node.get('ros__parameters')
+    if not isinstance(transform_params, dict):
+        raise RuntimeError(
+            f'Lidar parameter file "{params_path}" must define '
+            'laser_static_transform.ros__parameters.'
+        )
+
+    missing_keys = [
+        key for key in LASER_STATIC_TRANSFORM_KEYS if key not in transform_params
+    ]
+    if missing_keys:
+        raise RuntimeError(
+            f'Lidar parameter file "{params_path}" is missing '
+            'laser_static_transform.ros__parameters keys: '
+            f'{", ".join(missing_keys)}.'
+        )
+
+    return transform_params
+
+
+def _static_transform_arguments(transform_params):
+    return [
+        '--x',
+        str(transform_params['x']),
+        '--y',
+        str(transform_params['y']),
+        '--z',
+        str(transform_params['z']),
+        '--roll',
+        str(transform_params['roll']),
+        '--pitch',
+        str(transform_params['pitch']),
+        '--yaw',
+        str(transform_params['yaw']),
+        '--frame-id',
+        str(transform_params['parent_frame_id']),
+        '--child-frame-id',
+        str(transform_params['child_frame_id']),
+    ]
 
 
 def _launch_setup(context):
     params_file = LaunchConfiguration('params_file')
     lidar_serial_port = LaunchConfiguration('lidar_serial_port')
     params_path = params_file.perform(context)
-    tf_defaults = _load_lidar_defaults(params_path)
+    transform_params = _load_laser_static_transform(params_path)
 
     return [
         LogInfo(
             msg=[
-                'Starting RPLIDAR with ',
+                'Starting RPLIDAR using ',
                 params_file,
                 ' and serial port ',
                 lidar_serial_port,
@@ -46,24 +112,7 @@ def _launch_setup(context):
             package='tf2_ros',
             executable='static_transform_publisher',
             name='laser_static_transform_publisher',
-            arguments=[
-                '--x',
-                str(tf_defaults['x']),
-                '--y',
-                str(tf_defaults['y']),
-                '--z',
-                str(tf_defaults['z']),
-                '--roll',
-                str(tf_defaults['roll']),
-                '--pitch',
-                str(tf_defaults['pitch']),
-                '--yaw',
-                str(tf_defaults['yaw']),
-                '--frame-id',
-                str(tf_defaults['parent_frame_id']),
-                '--child-frame-id',
-                str(tf_defaults['child_frame_id']),
-            ],
+            arguments=_static_transform_arguments(transform_params),
             output='screen',
         ),
     ]
@@ -79,12 +128,12 @@ def generate_launch_description():
             DeclareLaunchArgument(
                 'params_file',
                 default_value=default_params_file,
-                description='Lidar and laser static transform parameter file.',
+                description='RPLIDAR and laser static transform parameter file.',
             ),
             DeclareLaunchArgument(
                 'lidar_serial_port',
                 default_value='/dev/rplidar',
-                description='RPLIDAR USB serial device.',
+                description='Stable RPLIDAR serial device.',
             ),
             OpaqueFunction(function=_launch_setup),
         ]

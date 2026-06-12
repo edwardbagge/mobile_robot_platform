@@ -1,6 +1,6 @@
 # ROS 2 Workspace Notes
 
-This workspace contains the current robot base stack, lidar bring-up, and the earlier incremental test packages used to reach the present setup.
+This workspace contains the current robot base stack, lidar bring-up, SLAM mapping launch/configuration, and the earlier incremental test packages used to reach the present setup.
 
 ## Current packages
 
@@ -8,10 +8,10 @@ This workspace contains the current robot base stack, lidar bring-up, and the ea
 Differential-drive base nodes:
 - `base_serial_bridge`: sends signed PWM commands to the ESP32 and republishes encoder ticks.
 - `wheel_velocity_controller`: converts `/cmd_vel` into wheel PWM using encoder feedback.
-- `wheel_odometry`: integrates encoder ticks into `/odom` and optional `odom -> base_link` TF.
+- `wheel_odometry`: integrates encoder ticks into `/odom` and publishes `odom -> base_link` TF by default.
 
 `robot_bringup`
-Launch and parameter files for the current base stack.
+Launch and parameter files for the base, lidar, SLAM mapping, and navigation bring-up wrappers.
 
 `rplidar_ros`
 RPLIDAR driver package.
@@ -27,6 +27,8 @@ Historical milestone packages kept for reference.
 Build the base package:
 
 ```bash
+cd ~/Documents/mobile_robot_platform/ros2_ws
+source /opt/ros/jazzy/setup.bash
 colcon build --packages-select robot_base robot_bringup
 source install/setup.bash
 ```
@@ -42,22 +44,22 @@ This launch starts:
 - `wheel_velocity_controller`
 - `wheel_odometry`
 
-Default parameters come from [src/robot_bringup/config/floor_safe_params.yaml](/home/edward/Documents/mobile_robot_platform/ros2_ws/src/robot_bringup/config/floor_safe_params.yaml:1).
+Default parameters come from [src/robot_bringup/config/floor_safe_params.yaml](src/robot_bringup/config/floor_safe_params.yaml).
 
-## SLAM and Nav2 runbook
+## SLAM mapping runbook
 
-The bring-up stack provides the core data needed by SLAM and navigation:
+The bring-up stack provides the core data needed by SLAM mapping:
 
 - `/cmd_vel` for velocity commands.
 - `/odom` and `odom -> base_link` TF from wheel odometry.
 - `/scan` from the RPLIDAR.
 - `base_link -> laser` static TF from `robot_bringup`.
 
-Install the missing ROS packages once:
+Install the missing ROS packages once for SLAM mapping:
 
 ```bash
 sudo apt update
-sudo apt install ros-jazzy-slam-toolbox ros-jazzy-navigation2 ros-jazzy-nav2-bringup ros-jazzy-rviz2 ros-jazzy-teleop-twist-keyboard
+sudo apt install ros-jazzy-slam-toolbox ros-jazzy-nav2-map-server ros-jazzy-rviz2 ros-jazzy-teleop-twist-keyboard
 sudo usermod -aG dialout $USER
 ```
 
@@ -86,6 +88,8 @@ The Raspberry Pi uses stable device aliases defined outside this workspace:
 
 These match `floor_safe_params.yaml` and the launch defaults. Do not replace them with temporary kernel-assigned serial device names in normal use. If either alias is missing, fix the Raspberry Pi udev/device setup before launching the robot stack.
 
+After the workspace has been built, `source install/setup.bash` is enough in new terminals because it chains the ROS underlay used during the build.
+
 Terminal 2: optional basic checks:
 
 ```bash
@@ -98,7 +102,7 @@ ros2 run tf2_ros tf2_echo odom base_link
 ros2 run tf2_ros tf2_echo base_link laser
 ```
 
-Terminal 2: drive the robot slowly while mapping:
+Terminal 3: drive the robot slowly while mapping:
 
 ```bash
 cd ~/Documents/mobile_robot_platform/ros2_ws
@@ -106,7 +110,7 @@ source install/setup.bash
 ros2 run teleop_twist_keyboard teleop_twist_keyboard
 ```
 
-Terminal 3: save the generated map:
+Terminal 4: save the generated map:
 
 ```bash
 cd ~/Documents/mobile_robot_platform/ros2_ws
@@ -120,6 +124,15 @@ Check that the map files were written:
 ```bash
 cd ~/Documents/mobile_robot_platform/ros2_ws
 ls -l maps
+```
+
+## Nav2 notes
+
+Nav2 is separate from the SLAM mapping workflow above. Install the Nav2 packages when you are ready to test navigation:
+
+```bash
+sudo apt update
+sudo apt install ros-jazzy-navigation2 ros-jazzy-nav2-bringup
 ```
 
 For a first Nav2 test while SLAM is still running:
@@ -149,7 +162,7 @@ ESP32 -> `base_serial_bridge` -> `/left_encoder_ticks`, `/right_encoder_ticks`
 Odometry output:
 
 - `/odom`
-- optional `odom -> base_link` TF
+- `odom -> base_link` TF by default
 
 ## Current safety behavior
 
@@ -170,13 +183,16 @@ The main related parameters are:
 
 ## Main files
 
-- Launch: [src/robot_bringup/launch/base_odom.launch.py](/home/edward/Documents/mobile_robot_platform/ros2_ws/src/robot_bringup/launch/base_odom.launch.py:1)
-- Mapping launch: [src/robot_bringup/launch/mapping.launch.py](/home/edward/Documents/mobile_robot_platform/ros2_ws/src/robot_bringup/launch/mapping.launch.py:1)
-- Base params: [src/robot_bringup/config/floor_safe_params.yaml](/home/edward/Documents/mobile_robot_platform/ros2_ws/src/robot_bringup/config/floor_safe_params.yaml:1)
-- SLAM params: [src/robot_bringup/config/slam_params.yaml](/home/edward/Documents/mobile_robot_platform/ros2_ws/src/robot_bringup/config/slam_params.yaml:1)
-- Serial bridge: [src/robot_base/src/base_serial_bridge.cpp](/home/edward/Documents/mobile_robot_platform/ros2_ws/src/robot_base/src/base_serial_bridge.cpp:1)
-- Velocity controller: [src/robot_base/src/wheel_velocity_controller.cpp](/home/edward/Documents/mobile_robot_platform/ros2_ws/src/robot_base/src/wheel_velocity_controller.cpp:1)
-- Odometry: [src/robot_base/src/wheel_odometry.cpp](/home/edward/Documents/mobile_robot_platform/ros2_ws/src/robot_base/src/wheel_odometry.cpp:1)
+- Base launch: [src/robot_bringup/launch/base_odom.launch.py](src/robot_bringup/launch/base_odom.launch.py)
+- Lidar launch: [src/robot_bringup/launch/lidar.launch.py](src/robot_bringup/launch/lidar.launch.py)
+- Robot launch: [src/robot_bringup/launch/robot.launch.py](src/robot_bringup/launch/robot.launch.py)
+- SLAM launch: [src/robot_bringup/launch/slam.launch.py](src/robot_bringup/launch/slam.launch.py)
+- Mapping launch: [src/robot_bringup/launch/mapping.launch.py](src/robot_bringup/launch/mapping.launch.py)
+- Base and lidar params: [src/robot_bringup/config/floor_safe_params.yaml](src/robot_bringup/config/floor_safe_params.yaml)
+- SLAM params: [src/robot_bringup/config/slam_params.yaml](src/robot_bringup/config/slam_params.yaml)
+- Serial bridge: [src/robot_base/src/base_serial_bridge.cpp](src/robot_base/src/base_serial_bridge.cpp)
+- Velocity controller: [src/robot_base/src/wheel_velocity_controller.cpp](src/robot_base/src/wheel_velocity_controller.cpp)
+- Odometry: [src/robot_base/src/wheel_odometry.cpp](src/robot_base/src/wheel_odometry.cpp)
 
 ## Test progression
 

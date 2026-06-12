@@ -17,25 +17,20 @@ def generate_launch_description():
             DeclareLaunchArgument(
                 'params_file',
                 default_value=default_params_file,
-                description='Base, controller, and odometry parameter file.',
+                description='Robot base, controller, and wheel odometry parameter file.',
             ),
             DeclareLaunchArgument(
                 'base_serial_port',
                 default_value='/dev/robot_base',
-                description='ESP32 USB serial device.',
+                description='Stable ESP32 base serial device.',
             ),
             LogInfo(
                 msg=[
-                    'Starting robot base bridge, wheel velocity controller, and odometry with ',
+                    'Starting robot base stack using ',
                     params_file,
                     ' and serial port ',
                     base_serial_port,
                     '.',
-                ]
-            ),
-            LogInfo(
-                msg=[
-                    'The parameter file remains the source of truth for controller and odometry tuning.',
                 ]
             ),
             Node(

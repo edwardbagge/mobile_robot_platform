@@ -2,7 +2,7 @@
 
 Market hardware:
 
-1) Slamtec RPLIDAR 360deg Laser Scanner Development Kit (A2)
+1) Slamtec RPLIDAR 360deg Laser Scanner Development Kit (A2M8)
 3) Raspberry Pi 5 8GB
 4) Motor (x2)
     a) Geared 12V DC

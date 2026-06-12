@@ -3,7 +3,7 @@
 <package format="3">
   <name>robot_bringup</name>
   <version>0.1.0</version>
-  <description>Launch files for starting the mobile robot base and odometry nodes.</description>
+  <description>Launch and configuration files for the mobile robot base, lidar, and mapping stack.</description>
   <maintainer email="edward.bagge@aalto.fi">baggee1</maintainer>
   <license>MIT</license>
 
@@ -12,6 +12,7 @@
   <exec_depend>launch</exec_depend>
   <exec_depend>launch_ros</exec_depend>
   <exec_depend>nav2_bringup</exec_depend>
+  <exec_depend>python3-yaml</exec_depend>
   <exec_depend>robot_base</exec_depend>
   <exec_depend>rplidar_ros</exec_depend>
   <exec_depend>slam_toolbox</exec_depend>

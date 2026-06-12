@@ -19,7 +19,7 @@ def generate_launch_description():
         [FindPackageShare('robot_bringup'), 'config', 'slam_params.yaml']
     )
 
-    params_file = LaunchConfiguration('params_file')
+    robot_params_file = LaunchConfiguration('params_file')
     slam_params_file = LaunchConfiguration('slam_params_file')
     base_serial_port = LaunchConfiguration('base_serial_port')
     lidar_serial_port = LaunchConfiguration('lidar_serial_port')
@@ -30,33 +30,33 @@ def generate_launch_description():
             DeclareLaunchArgument(
                 'params_file',
                 default_value=default_params_file,
-                description='Shared robot bringup parameter file.',
+                description='Shared base and lidar parameter file.',
             ),
             DeclareLaunchArgument(
                 'slam_params_file',
                 default_value=default_slam_params_file,
-                description='SLAM Toolbox parameter file.',
+                description='SLAM Toolbox online mapping parameter file.',
             ),
             DeclareLaunchArgument(
                 'base_serial_port',
                 default_value='/dev/robot_base',
-                description='ESP32 USB serial device.',
+                description='Stable ESP32 base serial device.',
             ),
             DeclareLaunchArgument(
                 'lidar_serial_port',
                 default_value='/dev/rplidar',
-                description='RPLIDAR USB serial device.',
+                description='Stable RPLIDAR serial device.',
             ),
             DeclareLaunchArgument(
                 'use_sim_time',
                 default_value='false',
                 description='Use simulation clock.',
             ),
-            LogInfo(msg='Starting robot mapping stack.'),
+            LogInfo(msg='Starting robot base, lidar, and SLAM mapping stack.'),
             IncludeLaunchDescription(
                 PythonLaunchDescriptionSource(robot_launch),
                 launch_arguments={
-                    'params_file': params_file,
+                    'params_file': robot_params_file,
                     'base_serial_port': base_serial_port,
                     'lidar_serial_port': lidar_serial_port,
                 }.items(),

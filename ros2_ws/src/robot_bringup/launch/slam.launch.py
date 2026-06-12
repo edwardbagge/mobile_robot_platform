@@ -21,14 +21,20 @@ def generate_launch_description():
             DeclareLaunchArgument(
                 'slam_params_file',
                 default_value=default_slam_params_file,
-                description='SLAM Toolbox parameter file.',
+                description='SLAM Toolbox online mapping parameter file.',
             ),
             DeclareLaunchArgument(
                 'use_sim_time',
                 default_value='false',
                 description='Use simulation clock.',
             ),
-            LogInfo(msg=['Starting SLAM Toolbox with ', slam_params_file, '.']),
+            LogInfo(
+                msg=[
+                    'Starting SLAM Toolbox online async mapping using ',
+                    slam_params_file,
+                    '.',
+                ]
+            ),
             IncludeLaunchDescription(
                 PythonLaunchDescriptionSource(slam_launch),
                 launch_arguments={
