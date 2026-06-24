@@ -2,7 +2,7 @@
 
 Market hardware:
 
-1) Slamtec RPLIDAR 360deg Laser Scanner Development Kit (A2M8)
+1) Slamtec RPLIDAR 360deg Laser Scanner Development Kit (A2M8) [product page](https://www.slamtec.com/en/lidar/a2)
 3) Raspberry Pi 5 8GB
 4) Geared 12V DC Motor (x2) [DFRobot product page](https://www.dfrobot.com/product-634.html)
 5) [Adafruit HUZZAH32 ESP32 Feather](https://www.adafruit.com/product/3405) and [Adafruit HUZZAH32 ESP32 Feather guide](https://learn.adafruit.com/adafruit-huzzah32-esp32-feather)
