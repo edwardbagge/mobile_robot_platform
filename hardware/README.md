@@ -13,10 +13,11 @@ Market hardware:
 10) Breadboard
 11) Levelshifter (5V/3.3V)
 12) [Mounting hub](https://partco.shop/product/axle-adapter-6-25-4mm-m3-4004) (part that is attached to 6mm motor-shaft)
-13) Lego Technic 8069 rims and backwheels (or similar)
-14) Fuse holder and 10A fuse
-15) Electric switch
-16) Buckconverter (Can endure over 5A)
+13) [Caster wheel](https://partco.shop/product/ball-bearing-3-4-metal-4006)
+14) Lego Technic 8069 rims and backwheels (or similar)
+15) Fuse holder and 10A fuse
+16) Electric switch
+17) Buckconverter (Can endure over 5A)
 
 Custom hardware:
 
