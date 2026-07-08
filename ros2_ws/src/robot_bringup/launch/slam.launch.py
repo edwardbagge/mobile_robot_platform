@@ -1,3 +1,10 @@
+# slam.launch.py
+# Launch file for the SLAM mapping stack.
+#
+# This file starts the SLAM Toolbox node using the robot's odometry and lidar
+# scan topics. In practice, it consumes the pose estimate from /odom and the
+# scan data from /scan to build a map of the environment.
+
 from launch import LaunchDescription
 from launch.actions import DeclareLaunchArgument, IncludeLaunchDescription, LogInfo
 from launch.launch_description_sources import PythonLaunchDescriptionSource
@@ -28,6 +35,7 @@ def generate_launch_description():
                 default_value='false',
                 description='Use simulation clock.',
             ),
+            # Report which SLAM parameter file is being used.
             LogInfo(
                 msg=[
                     'Starting SLAM Toolbox online async mapping using ',
@@ -35,6 +43,7 @@ def generate_launch_description():
                     '.',
                 ]
             ),
+            # Launch the SLAM Toolbox node with the selected parameters.
             IncludeLaunchDescription(
                 PythonLaunchDescriptionSource(slam_launch),
                 launch_arguments={

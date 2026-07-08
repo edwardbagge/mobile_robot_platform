@@ -1,5 +1,20 @@
 // base_serial_bridge.cpp
-// ROS 2 bridge from /cmd_vel to signed PWM commands for the ESP32 base firmware.
+// ROS 2 bridge between high-level robot motion commands and the ESP32 firmware.
+//
+// This node is the interface between the ROS 2 side of the robot and the
+// low-level hardware controller. In practical terms, it receives a desired
+// motion command from ROS 2, converts that command into left/right wheel PWM
+// values, sends those values to the ESP32 over USB serial, and then listens for
+// encoder feedback from the firmware so that the rest of the system can know
+// how the wheels actually moved.
+//
+// ROS 2 data flow:
+// - Input topic: /cmd_vel (geometry_msgs/msg/Twist) or /wheel_pwm_cmd
+//   (std_msgs/msg/Int32MultiArray), depending on configuration.
+// - Output topics: /left_encoder_ticks and /right_encoder_ticks
+//   (std_msgs/msg/Int64), published from the feedback received over serial.
+// - The node communicates with the firmware using a simple text protocol over a
+//   serial port, for example: "M -80 80" to command the motors.
 
 #include <geometry_msgs/msg/twist.hpp>
 #include <rclcpp/rclcpp.hpp>
@@ -29,6 +44,10 @@ using namespace std::chrono_literals;
 class BaseSerialBridgeNode : public rclcpp::Node
 {
 public:
+  // The constructor configures the node parameters, sets up the ROS 2
+  // subscriptions and publishers, opens the serial connection to the ESP32,
+  // starts a background reader thread for firmware feedback, and schedules a
+  // periodic timer that repeatedly sends the latest command to the robot base.
   BaseSerialBridgeNode()
   : Node("base_serial_bridge"), running_(true)
   {
@@ -52,9 +71,15 @@ public:
     left_pwm_scale_ = std::clamp(left_pwm_scale_, 0.0, 2.0);
     right_pwm_scale_ = std::clamp(right_pwm_scale_, 0.0, 2.0);
 
+    // These publishers expose the encoder feedback from the ESP32 as ROS 2
+    // topics. Other nodes can subscribe to them for odometry or debugging.
     left_publisher_ = this->create_publisher<std_msgs::msg::Int64>("/left_encoder_ticks", 10);
     right_publisher_ = this->create_publisher<std_msgs::msg::Int64>("/right_encoder_ticks", 10);
 
+    // The node can operate in two modes:
+    // 1. Receive /cmd_vel (geometry_msgs/Twist) and convert it into wheel PWM.
+    // 2. Receive /wheel_pwm_cmd (std_msgs/Int32MultiArray) when a higher-level
+    //    controller already computed the left/right PWM values.
     if (command_source_ == "wheel_pwm_cmd") {
       pwm_subscription_ = this->create_subscription<std_msgs::msg::Int32MultiArray>(
         "/wheel_pwm_cmd",
@@ -150,6 +175,8 @@ private:
   rclcpp::Publisher<std_msgs::msg::Int64>::SharedPtr left_publisher_;
   rclcpp::Publisher<std_msgs::msg::Int64>::SharedPtr right_publisher_;
 
+  // Open the serial device with a simple terminal configuration suitable for the
+  // ESP32 firmware's 115200 baud text protocol.
   void openSerialPort()
   {
     serial_fd_ = open(serial_port_.c_str(), O_RDWR | O_NOCTTY | O_NONBLOCK);
@@ -196,6 +223,7 @@ private:
     RCLCPP_INFO(this->get_logger(), "Serial port opened successfully.");
   }
 
+  // Give the ESP32 firmware a short startup window before sending commands.
   void waitForEsp32Startup()
   {
     if (serial_fd_ < 0) {
@@ -211,6 +239,9 @@ private:
     tcflush(serial_fd_, TCIOFLUSH);
   }
 
+  // Store the latest high-level command so it can be forwarded on the timer.
+  // A Twist message contains linear and angular velocity components, which are
+  // converted here into left and right wheel commands for differential drive.
   void cmdVelCallback(const geometry_msgs::msg::Twist::SharedPtr msg)
   {
     const auto pwm_pair = twistToPwm(*msg);
@@ -234,6 +265,11 @@ private:
     last_cmd_vel_time_ = std::chrono::steady_clock::now();
   }
 
+  // Convert a Twist message into left/right wheel PWM values.
+  // The message's linear.x and angular.z components are interpreted as the
+  // desired forward/backward motion and rotation of the robot. The node then
+  // computes the required velocity for each wheel and maps that into a PWM
+  // command suitable for the ESP32 firmware.
   std::pair<int, int> twistToPwm(const geometry_msgs::msg::Twist & twist) const
   {
     double linear_x = std::abs(twist.linear.x) < linear_deadband_mps_ ? 0.0 : twist.linear.x;
@@ -278,6 +314,9 @@ private:
     return scaled_pwm;
   }
 
+  // Periodically transmit the most recent command, or stop the motors if the
+  // command has timed out. This timer is the bridge between the ROS 2 command
+  // stream and the periodic update rate expected by the ESP32 firmware.
   void sendCommandTimerCallback()
   {
     int left_pwm = 0;
@@ -304,6 +343,9 @@ private:
     }
   }
 
+  // Send a full motor command to the ESP32 using the simple text protocol.
+  // The firmware expects commands of the form "M left_pwm right_pwm", where the
+  // values are signed PWM values for the left and right motors.
   void sendMotorCommand(int left_pwm, int right_pwm)
   {
     if (left_pwm == 0 && right_pwm == 0 && active_brake_on_stop_) {
@@ -341,6 +383,8 @@ private:
     }
   }
 
+  // Write a newline-terminated command to the serial port and retry on transient
+  // write errors.
   bool sendSerialLine(const std::string & line)
   {
     if (serial_fd_ < 0) {
@@ -385,6 +429,7 @@ private:
     return true;
   }
 
+  // Read firmware feedback asynchronously and split it into newline-delimited lines.
   void readSerialLoop()
   {
     std::string line_buffer;
@@ -427,6 +472,10 @@ private:
     }
   }
 
+  // Parse feedback from the ESP32 and publish encoder ticks as ROS topics.
+  // The firmware sends lines such as "FEEDBACK | LEFT ticks = ... | RIGHT ticks = ...".
+  // This node extracts those numbers and republishes them as standard Int64
+  // messages so that odometry and other monitoring nodes can consume them.
   void handleSerialLine(const std::string & line)
   {
     static const std::regex feedback_regex(

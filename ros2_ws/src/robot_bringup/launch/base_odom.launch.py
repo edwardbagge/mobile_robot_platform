@@ -1,3 +1,11 @@
+# base_odom.launch.py
+# Launch file for the low-level robot base stack.
+#
+# This launch file starts the three ROS 2 nodes that form the core motion
+# pipeline of the mobile robot: the serial bridge, the wheel velocity control
+# loop, and the odometry estimator. Together, these nodes turn motion commands
+# into motor actuation and provide the robot pose estimate used by navigation.
+
 from launch import LaunchDescription
 from launch.actions import DeclareLaunchArgument, LogInfo
 from launch.substitutions import LaunchConfiguration, PathJoinSubstitution
@@ -24,6 +32,7 @@ def generate_launch_description():
                 default_value='/dev/robot_base',
                 description='Stable ESP32 base serial device.',
             ),
+            # Report the selected parameter file and serial device before startup.
             LogInfo(
                 msg=[
                     'Starting robot base stack using ',
@@ -33,6 +42,7 @@ def generate_launch_description():
                     '.',
                 ]
             ),
+            # Start the serial bridge, which connects ROS 2 to the ESP32 firmware.
             Node(
                 package='robot_base',
                 executable='base_serial_bridge',
@@ -46,6 +56,7 @@ def generate_launch_description():
                     },
                 ],
             ),
+            # Start the feedback controller that turns desired wheel motion into PWM.
             Node(
                 package='robot_base',
                 executable='wheel_velocity_controller',
@@ -53,6 +64,7 @@ def generate_launch_description():
                 output='screen',
                 parameters=[params_file],
             ),
+            # Start the odometry node that estimates the robot pose from encoder data.
             Node(
                 package='robot_base',
                 executable='wheel_odometry',

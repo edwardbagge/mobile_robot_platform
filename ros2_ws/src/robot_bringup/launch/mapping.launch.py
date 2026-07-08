@@ -1,3 +1,10 @@
+# mapping.launch.py
+# Launch file for the full mapping workflow.
+#
+# This file combines the robot base stack, the lidar stack, and the SLAM Toolbox
+# into one launch entry point so that the robot can be driven while building a
+# map of the environment.
+
 from launch import LaunchDescription
 from launch.actions import DeclareLaunchArgument, IncludeLaunchDescription, LogInfo
 from launch.launch_description_sources import PythonLaunchDescriptionSource
@@ -52,7 +59,10 @@ def generate_launch_description():
                 default_value='false',
                 description='Use simulation clock.',
             ),
+            # Announce that the robot base, lidar, and SLAM components are starting.
             LogInfo(msg='Starting robot base, lidar, and SLAM mapping stack.'),
+            # Start the robot base and lidar subsystems first so that their topics
+            # are available to the mapping stack.
             IncludeLaunchDescription(
                 PythonLaunchDescriptionSource(robot_launch),
                 launch_arguments={
@@ -61,6 +71,7 @@ def generate_launch_description():
                     'lidar_serial_port': lidar_serial_port,
                 }.items(),
             ),
+            # Start the SLAM node after the robot and lidar systems are available.
             IncludeLaunchDescription(
                 PythonLaunchDescriptionSource(slam_launch),
                 launch_arguments={

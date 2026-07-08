@@ -1,3 +1,10 @@
+# lidar.launch.py
+# Launch file for the robot's lidar perception stack.
+#
+# This file starts the RPLIDAR driver and publishes the static transform that
+# places the laser scanner in the robot's coordinate frame. The resulting /scan
+# topic is then used by mapping and navigation nodes.
+
 from launch import LaunchDescription
 from launch.actions import DeclareLaunchArgument, LogInfo, OpaqueFunction
 from launch.substitutions import LaunchConfiguration, PathJoinSubstitution
@@ -86,6 +93,7 @@ def _launch_setup(context):
     transform_params = _load_laser_static_transform(params_path)
 
     return [
+        # Report the selected parameter file and the chosen serial device.
         LogInfo(
             msg=[
                 'Starting RPLIDAR using ',
@@ -95,6 +103,7 @@ def _launch_setup(context):
                 '.',
             ]
         ),
+        # Start the RPLIDAR driver so that the robot publishes laser scan data.
         Node(
             package='rplidar_ros',
             executable='rplidar_node',
@@ -108,6 +117,8 @@ def _launch_setup(context):
                 },
             ],
         ),
+        # Publish the fixed transform between the base frame and the lidar frame.
+        # This tells ROS 2 where the laser scanner is mounted on the robot.
         Node(
             package='tf2_ros',
             executable='static_transform_publisher',

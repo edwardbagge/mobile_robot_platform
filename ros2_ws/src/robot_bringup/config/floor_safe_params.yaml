@@ -1,3 +1,6 @@
+# Parameters for the serial bridge node.
+# This node connects ROS 2 to the ESP32 firmware over a serial port and forwards
+# wheel commands and encoder feedback between the host computer and the robot.
 base_serial_bridge:
   ros__parameters:
     serial_port: /dev/robot_base
@@ -13,6 +16,9 @@ base_serial_bridge:
     active_brake_on_stop: true
     startup_delay_s: 2.5
 
+# Parameters for the wheel velocity controller.
+# These values determine how aggressively the robot tries to reach the desired
+# wheel speed and how much feedback is required before the controller acts.
 wheel_velocity_controller:
   ros__parameters:
     controller_rate_hz: 20.0
@@ -29,6 +35,9 @@ wheel_velocity_controller:
     linear_deadband_mps: 0.005
     angular_deadband_rps: 0.01
 
+# Parameters for the odometry estimator.
+# These values define how encoder ticks are converted into robot motion and how
+# the estimated pose is published for navigation and visualization.
 wheel_odometry:
   ros__parameters:
     publish_rate_hz: 20.0
@@ -40,6 +49,8 @@ wheel_odometry:
     odom_frame_id: odom
     base_frame_id: base_link
 
+# Parameters for the RPLIDAR driver node.
+# These values configure the hardware connection and the scan output format.
 rplidar_node:
   ros__parameters:
     serial_port: /dev/rplidar
@@ -49,6 +60,8 @@ rplidar_node:
     angle_compensate: true
     scan_mode: ""
 
+# Static transform from the robot base to the lidar frame.
+# This defines the physical mounting position of the laser scanner on the robot.
 laser_static_transform:
   ros__parameters:
     x: 0.050

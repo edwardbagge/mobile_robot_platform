@@ -1,3 +1,6 @@
+# Parameters for the SLAM Toolbox mapping node.
+# These values tell the mapper which topics and coordinate frames to use when
+# building the occupancy map from lidar scans and odometry.
 slam_toolbox:
   ros__parameters:
     use_sim_time: false

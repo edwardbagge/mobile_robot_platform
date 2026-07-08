@@ -1,10 +1,16 @@
-#include <geometry_msgs/msg/quaternion.hpp>
-#include <geometry_msgs/msg/transform_stamped.hpp>
-#include <nav_msgs/msg/odometry.hpp>
-#include <rclcpp/rclcpp.hpp>
-#include <std_msgs/msg/int64.hpp>
-#include <tf2/LinearMath/Quaternion.h>
-#include <tf2_ros/transform_broadcaster.h>
+// wheel_odometry.cpp
+// ROS 2 odometry node for the differential-drive robot.
+//
+// This node estimates the robot's position and orientation from the left and
+// right wheel encoder counts. The result is published as a standard ROS 2
+// odometry message and, optionally, as a TF transform between the odom and
+// base_link frames.
+//
+// ROS 2 data flow:
+// - Input topics: /left_encoder_ticks and /right_encoder_ticks
+//   (std_msgs/msg/Int64), published by the serial bridge.
+// - Output topic: /odom (nav_msgs/msg/Odometry).
+// - Optional output: TF transform from odom -> base_link.
 
 #include <algorithm>
 #include <cmath>
@@ -14,6 +20,9 @@
 class WheelOdometryNode : public rclcpp::Node
 {
 public:
+  // The constructor sets up the subscriptions, publisher, timer, and optional TF
+  // broadcaster. The node then updates the robot pose at a fixed rate using the
+  // latest encoder information.
   WheelOdometryNode()
   : Node("wheel_odometry")
   {
@@ -28,12 +37,15 @@ public:
     odom_frame_id_ = this->declare_parameter<std::string>("odom_frame_id", "odom");
     base_frame_id_ = this->declare_parameter<std::string>("base_frame_id", "base_link");
 
+    // Publish the estimated robot state as a standard ROS 2 odometry message.
     odom_publisher_ = this->create_publisher<nav_msgs::msg::Odometry>("/odom", 10);
 
     if (publish_tf_) {
       tf_broadcaster_ = std::make_unique<tf2_ros::TransformBroadcaster>(*this);
     }
 
+    // Subscribe to the encoder tick topics that are published by the serial
+    // bridge after the ESP32 reports wheel movement.
     left_subscription_ = this->create_subscription<std_msgs::msg::Int64>(
       "/left_encoder_ticks",
       10,
@@ -91,6 +103,7 @@ private:
   rclcpp::TimerBase::SharedPtr timer_;
   std::unique_ptr<tf2_ros::TransformBroadcaster> tf_broadcaster_;
 
+  // Store the latest encoder count for the left wheel.
   void leftTicksCallback(const std_msgs::msg::Int64::SharedPtr msg)
   {
     current_left_ticks_ = msg->data;
@@ -103,6 +116,8 @@ private:
     right_ticks_received_ = true;
   }
 
+  // Main odometry update loop. It computes how much the robot moved since the
+  // previous update and then updates the estimated position and heading.
   void publishOdometry()
   {
     if (!left_ticks_received_ || !right_ticks_received_) {
@@ -124,6 +139,8 @@ private:
       return;
     }
 
+    // The difference between the current encoder count and the last processed
+    // count gives the wheel movement since the previous update.
     const int64_t delta_left_ticks = current_left_ticks_ - last_processed_left_ticks_;
     const int64_t delta_right_ticks = current_right_ticks_ - last_processed_right_ticks_;
 
@@ -148,13 +165,19 @@ private:
     const double meters_per_tick =
       (2.0 * M_PI * wheel_radius_m_) / ticks_per_revolution_;
 
+    // Convert encoder tick changes into physical wheel distances.
+    // The average of the two wheel distances gives the robot's forward travel,
+    // while the difference between them gives the change in heading.
     const double left_distance_m = static_cast<double>(delta_left_ticks) * meters_per_tick;
     const double right_distance_m = static_cast<double>(delta_right_ticks) * meters_per_tick;
     const double center_distance_m = 0.5 * (left_distance_m + right_distance_m);
     const double delta_yaw_rad = (right_distance_m - left_distance_m) / wheel_base_m_;
 
-    // Use midpoint heading to reduce integration error during turns.
+    // Use the midpoint heading to reduce integration error during turns.
     const double heading_mid_rad = yaw_rad_ + (0.5 * delta_yaw_rad);
+    // Update the estimated pose in the world frame based on the robot's motion.
+    // The robot moves forward along its current heading and rotates by the
+    // computed yaw change.
     x_m_ += center_distance_m * std::cos(heading_mid_rad);
     y_m_ += center_distance_m * std::sin(heading_mid_rad);
     yaw_rad_ = normalizeAngle(yaw_rad_ + delta_yaw_rad);
@@ -173,6 +196,8 @@ private:
     last_publish_time_ = now;
   }
 
+  // Publish the estimated pose and velocity in the standard nav_msgs/Odometry
+  // format so that navigation and visualization tools can consume it.
   void publishOdometryMessage(
     const rclcpp::Time & stamp,
     double linear_velocity_mps,
@@ -194,6 +219,9 @@ private:
     odom_publisher_->publish(odom_msg);
   }
 
+  // Publish the TF transform that links the odom frame to the robot body frame.
+  // This allows other ROS 2 nodes to reason about the robot pose in a spatial
+  // coordinate system.
   void publishTransform(const rclcpp::Time & stamp)
   {
     geometry_msgs::msg::TransformStamped transform_msg;
@@ -222,6 +250,8 @@ private:
     return msg;
   }
 
+  // Reject sudden, unrealistic jumps in encoder counts so that bad feedback does
+  // not create large fake motions in the odometry estimate.
   bool tickJumpLooksInvalid(int64_t delta_ticks, double dt) const
   {
     if (dt <= 0.0 || ticks_per_revolution_ <= 0.0 || wheel_radius_m_ <= 0.0) {

@@ -1,3 +1,9 @@
+# robot.launch.py
+# High-level launch file for the complete base and lidar bring-up.
+#
+# This file composes the base stack and the lidar stack into a single startup
+# workflow so that the robot can publish both wheel odometry and laser scan data.
+
 from launch import LaunchDescription
 from launch.actions import DeclareLaunchArgument, IncludeLaunchDescription, LogInfo
 from launch.launch_description_sources import PythonLaunchDescriptionSource
@@ -37,7 +43,10 @@ def generate_launch_description():
                 default_value='/dev/rplidar',
                 description='Stable RPLIDAR serial device.',
             ),
+            # Announce that the base and lidar subsystems are being started together.
             LogInfo(msg='Starting robot base and lidar bringup.'),
+            # Launch the base stack, which includes the serial bridge, controller,
+            # and odometry nodes.
             IncludeLaunchDescription(
                 PythonLaunchDescriptionSource(base_launch),
                 launch_arguments={
@@ -45,6 +54,8 @@ def generate_launch_description():
                     'base_serial_port': base_serial_port,
                 }.items(),
             ),
+            # Launch the lidar stack so that scan data is available for mapping or
+            # obstacle detection.
             IncludeLaunchDescription(
                 PythonLaunchDescriptionSource(lidar_launch),
                 launch_arguments={

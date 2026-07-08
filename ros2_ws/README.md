@@ -1,28 +1,19 @@
 # ROS 2 Workspace Notes
 
-This workspace contains the current robot base stack, lidar bring-up, SLAM mapping launch/configuration, and the earlier incremental test packages used to reach the present setup.
+This workspace contains the current ROS 2 software stack for the mobile robot platform. It includes the base controller nodes, the lidar bring-up, and the SLAM mapping workflow used to test autonomous mapping on the hardware. The stack is intended for ROS 2 Jazzy and assumes the robot is connected through the ESP32-based base controller and an RPLIDAR sensor.
 
-## Current packages
+At runtime, the system follows a simple information flow. A motion command is sent on /cmd_vel, the wheel velocity controller converts that command into wheel-level PWM values, the serial bridge forwards those values to the ESP32 firmware, and the firmware reports encoder feedback back to ROS 2 through the left and right encoder topics. The resulting motion estimate is published as /odom and as TF for use by mapping and navigation tools.
 
-`robot_base`
-Differential-drive base nodes:
-- `base_serial_bridge`: sends signed PWM commands to the ESP32 and republishes encoder ticks.
-- `wheel_velocity_controller`: converts `/cmd_vel` into wheel PWM using encoder feedback.
-- `wheel_odometry`: integrates encoder ticks into `/odom` and publishes `odom -> base_link` TF by default.
+## Core packages
 
-`robot_bringup`
-Launch and parameter files for the base, lidar, SLAM mapping, and navigation bring-up wrappers.
-
-`rplidar_ros`
-RPLIDAR driver package.
-
-`learning/simple_publisher`, `learning/simple_subscriber`
-Small ROS 2 learning / smoke-test packages.
-
-`experiments/test_09` to `experiments/test_13`
-Historical ROS 2 milestone packages kept for reference. These are separate from the top-level `testing/` folder, which contains manual non-ROS hardware bring-up tests.
+- `robot_base`: the main motion-control stack for the robot base.
+- `robot_bringup`: launch files and configuration for the base, lidar, mapping, and navigation workflow.
+- `rplidar_ros`: the ROS driver for the RPLIDAR sensor.
+- `learning` and `experiments`: small test and learning packages used during development.
 
 ## Current base bring-up
+
+The simplest way to start the base stack is to launch the base bring-up file, which starts the serial bridge, wheel velocity controller, and odometry node together.
 
 Build the base package:
 
@@ -55,7 +46,7 @@ The bring-up stack provides the core data needed by SLAM mapping:
 - `/scan` from the RPLIDAR.
 - `base_link -> laser` static TF from `robot_bringup`.
 
-Install the missing ROS packages once for SLAM mapping:
+Install the required ROS packages once before using the mapping workflow:
 
 ```bash
 sudo apt update
@@ -63,9 +54,7 @@ sudo apt install ros-jazzy-slam-toolbox ros-jazzy-nav2-map-server ros-jazzy-rviz
 sudo usermod -aG dialout $USER
 ```
 
-Log out and back in after changing groups.
-
-Use this clean-start mapping sequence. Only run `mapping.launch.py`; do not run `robot.launch.py` or `slam.launch.py` separately.
+Log out and back in after changing groups. For a clean start, use `mapping.launch.py` directly rather than launching the lower-level files separately.
 
 Terminal 1: build and start mapping:
 
@@ -79,16 +68,14 @@ ls -l /dev/robot_base /dev/rplidar
 ros2 launch robot_bringup mapping.launch.py
 ```
 
-The Raspberry Pi uses stable device aliases defined outside this workspace:
+The robot uses stable device aliases for the serial connections:
 
 ```bash
 /dev/robot_base
 /dev/rplidar
 ```
 
-These match `floor_safe_params.yaml` and the launch defaults. Do not replace them with temporary kernel-assigned serial device names in normal use. If either alias is missing, fix the Raspberry Pi udev/device setup before launching the robot stack.
-
-After the workspace has been built, `source install/setup.bash` is enough in new terminals because it chains the ROS underlay used during the build.
+These should be used consistently in the launch configuration. If either alias is missing, fix the hardware device setup before launching the stack.
 
 Terminal 2: optional basic checks:
 
@@ -128,7 +115,7 @@ ls -l maps
 
 ## Nav2 notes
 
-Nav2 is separate from the SLAM mapping workflow above. Install the Nav2 packages when you are ready to test navigation:
+Nav2 is separate from the SLAM mapping workflow. Install the Nav2 packages when you are ready to test navigation:
 
 ```bash
 sudo apt update
@@ -164,22 +151,14 @@ Odometry output:
 - `/odom`
 - `odom -> base_link` TF by default
 
-## Current safety behavior
+## Safety notes
 
-The base stack now includes two protections against bad encoder data:
+The base stack includes two practical protections against bad encoder data:
 
-- `wheel_velocity_controller` stops publishing drive PWM if encoder feedback goes stale for longer than `encoder_timeout_s`.
-- `wheel_velocity_controller` and `wheel_odometry` ignore implausible encoder tick jumps, which helps avoid bad control effort or fake odometry jumps after an ESP32 reboot or counter reset.
+- the controller stops publishing drive PWM if encoder feedback becomes stale,
+- and both the controller and odometry logic reject implausible encoder jumps.
 
-The main related parameters are:
-
-- `command_timeout_s`
-- `encoder_timeout_s`
-- `max_wheel_speed_mps`
-- `max_tick_jump_scale`
-- `ticks_per_revolution`
-- `wheel_radius_m`
-- `wheel_base_m`
+These protections are controlled mainly by the timeout and speed-related parameters in [src/robot_bringup/config/floor_safe_params.yaml](src/robot_bringup/config/floor_safe_params.yaml).
 
 ## Main files
 

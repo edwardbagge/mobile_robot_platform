@@ -1,7 +1,16 @@
-#include <geometry_msgs/msg/twist.hpp>
-#include <rclcpp/rclcpp.hpp>
-#include <std_msgs/msg/int32_multi_array.hpp>
-#include <std_msgs/msg/int64.hpp>
+// wheel_velocity_controller.cpp
+// ROS 2 feedback controller for the differential-drive robot base.
+//
+// This node closes the loop between desired motion and actual wheel motion.
+// It receives a commanded velocity from /cmd_vel, reads the encoder feedback
+// published by the serial bridge, estimates the actual wheel speed, and then
+// computes the PWM values that should be sent to the low-level motor controller.
+//
+// ROS 2 data flow:
+// - Input topics: /cmd_vel (geometry_msgs/msg/Twist) and the two encoder topics
+//   /left_encoder_ticks and /right_encoder_ticks (std_msgs/msg/Int64).
+// - Output topic: /wheel_pwm_cmd (std_msgs/msg/Int32MultiArray), where the two
+//   integers are the commanded PWM values for the left and right motors.
 
 #include <algorithm>
 #include <chrono>
@@ -14,6 +23,9 @@
 class WheelVelocityControllerNode : public rclcpp::Node
 {
 public:
+  // The constructor sets up the subscriptions, publisher, and periodic control
+  // timer. The node then runs continuously, updating the motor commands at a
+  // fixed frequency based on the latest feedback.
   WheelVelocityControllerNode()
   : Node("wheel_velocity_controller")
   {
@@ -35,13 +47,18 @@ public:
     min_pwm_ = std::clamp(min_pwm_, 0, max_pwm_);
     controller_rate_hz_ = std::max(controller_rate_hz_, 1.0);
 
+    // This publisher sends the computed left/right PWM values to the serial
+    // bridge, which forwards them to the ESP32 firmware.
     pwm_publisher_ = this->create_publisher<std_msgs::msg::Int32MultiArray>("/wheel_pwm_cmd", 10);
 
+    // Receive the high-level motion command from the navigation or teleop layer.
+    // A Twist message contains a desired linear velocity and angular velocity.
     cmd_vel_subscription_ = this->create_subscription<geometry_msgs::msg::Twist>(
       "/cmd_vel",
       10,
       std::bind(&WheelVelocityControllerNode::cmdVelCallback, this, std::placeholders::_1));
 
+    // Receive the encoder feedback that was published by the serial bridge.
     left_ticks_subscription_ = this->create_subscription<std_msgs::msg::Int64>(
       "/left_encoder_ticks",
       10,
@@ -108,6 +125,9 @@ private:
   rclcpp::Subscription<std_msgs::msg::Int64>::SharedPtr right_ticks_subscription_;
   rclcpp::TimerBase::SharedPtr timer_;
 
+  // Convert the desired robot motion into a target speed for each wheel.
+  // For a differential-drive robot, forward motion and rotation are translated
+  // into a left wheel target speed and a right wheel target speed.
   void cmdVelCallback(const geometry_msgs::msg::Twist::SharedPtr msg)
   {
     const double linear_x =
@@ -121,6 +141,8 @@ private:
     last_cmd_vel_time_ = this->get_clock()->now();
   }
 
+  // Store the latest encoder count for the left wheel and the time at which it
+  // was received. These values are later used to estimate actual wheel speed.
   void leftTicksCallback(const std_msgs::msg::Int64::SharedPtr msg)
   {
     std::lock_guard<std::mutex> lock(state_mutex_);
@@ -137,6 +159,8 @@ private:
     last_right_ticks_time_ = this->get_clock()->now();
   }
 
+  // This is the main control loop. It repeatedly compares the desired wheel
+  // speed with the measured wheel speed and adjusts the PWM output accordingly.
   void controlTimerCallback()
   {
     const rclcpp::Time now = this->get_clock()->now();
@@ -219,12 +243,18 @@ private:
     publishPwmCommand(left_pwm, right_pwm);
   }
 
+  // Convert an encoder tick delta into a traveled distance in meters.
+  // The conversion depends on the wheel radius and the number of encoder ticks
+  // per wheel revolution.
   double ticksToMeters(int64_t ticks) const
   {
     return static_cast<double>(ticks) *
       (2.0 * M_PI * wheel_radius_m_) / ticks_per_revolution_;
   }
 
+  // Reject sudden, unrealistic changes in encoder counts. This protects the
+  // controller from corrupted or reset encoder data that would otherwise create
+  // a false spike in estimated speed.
   bool tickJumpLooksInvalid(int64_t delta_ticks, double dt) const
   {
     if (dt <= 0.0 || ticks_per_revolution_ <= 0.0 || wheel_radius_m_ <= 0.0) {
@@ -237,6 +267,9 @@ private:
     return static_cast<double>(std::abs(delta_ticks)) > std::max(1.0, max_ticks);
   }
 
+  // Create a base PWM command from the desired wheel speed. This gives the
+  // motor a first approximation of the needed effort before any correction is
+  // applied based on feedback.
   int feedforwardPwm(double target_mps) const
   {
     if (std::abs(target_mps) < linear_deadband_mps_ || max_wheel_speed_mps_ <= 0.0) {
@@ -249,6 +282,9 @@ private:
     return enforceMinPwm(pwm);
   }
 
+  // Compute the final PWM command by combining a feedforward term with a
+  // feedback correction term. The feedback part reduces the difference between
+  // the target speed and the measured speed.
   int computePwm(double target_mps, double actual_mps) const
   {
     if (std::abs(target_mps) < linear_deadband_mps_) {
@@ -270,6 +306,9 @@ private:
     return pwm;
   }
 
+  // Publish the computed left/right PWM values as a two-element array.
+  // The serial bridge subscribes to this topic and forwards the values to the
+  // ESP32 firmware over serial.
   void publishPwmCommand(int left_pwm, int right_pwm)
   {
     std_msgs::msg::Int32MultiArray msg;
