@@ -1,5 +1,9 @@
 // robot_base_esp32.ino
-// ESP32 base firmware for differential-drive control from ROS 2 over USB serial.
+// ESP32 firmware for the differential-drive robot base.
+//
+// This sketch accepts motion commands from the Raspberry Pi over USB serial,
+// drives the left and right motor H-bridges, and reports encoder feedback for
+// closed-loop control and odometry.
 //
 // Serial protocol, 115200 baud:
 //   M <left_pwm> <right_pwm>   signed PWM command, range -255..255
@@ -69,7 +73,9 @@ struct EncoderSnapshot
   int64_t rightInvalidTransitions;
 };
 
-// ---------- Encoder interrupt functions ----------
+// ---------- Encoder interrupt handling ----------
+// Quadrature encoders are read through interrupt service routines so the firmware
+// can count wheel motion without missing transitions during fast movement.
 uint8_t IRAM_ATTR readEncoderState(int pinA, int pinB)
 {
   uint8_t a = digitalRead(pinA) ? 1 : 0;
@@ -134,6 +140,8 @@ void IRAM_ATTR onRightEncoder()
 }
 
 // ---------- Motor control ----------
+// The motor functions map the signed PWM values from the host computer into the
+// appropriate H-bridge outputs for forward, reverse, or braking behavior.
 int clampPwm(int pwm)
 {
   if (pwm > MAX_PWM)
@@ -253,6 +261,8 @@ void applyMotorCommand(int leftPwm, int rightPwm)
 }
 
 // ---------- Encoder helper functions ----------
+// These helpers make it easy to snapshot the encoder counters atomically and to
+// reset them when the host requests a fresh baseline.
 EncoderSnapshot getEncoderSnapshot()
 {
   EncoderSnapshot snapshot;
@@ -315,6 +325,8 @@ void printStatus()
 }
 
 // ---------- Serial command handler ----------
+// The firmware expects simple text commands from the serial link. Each newline
+// terminates a command, which is then parsed and applied immediately.
 char *trimWhitespace(char *text)
 {
   while (*text != '\0' && isspace(static_cast<unsigned char>(*text)))
@@ -475,6 +487,8 @@ void processSerialInput()
 }
 
 // ---------- Periodic checks ----------
+// The main loop periodically checks for stale commands and emits encoder feedback.
+// If a command stops arriving, the robot is forced to brake for safety.
 void checkCommandTimeout()
 {
   if (commandActive && millis() - lastCommandTime >= COMMAND_TIMEOUT_MS)
@@ -495,6 +509,8 @@ void checkFeedbackPrint()
 }
 
 // ---------- Setup ----------
+// Setup initializes the serial port, motor pins, encoder inputs, PWM outputs,
+// and the initial motor/encoder state before normal operation begins.
 void setup()
 {
   Serial.begin(115200);
