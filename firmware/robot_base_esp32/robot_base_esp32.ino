@@ -11,8 +11,6 @@
 //   Z                          reset encoder counts
 //   S                          print status
 //
-// Feedback format is kept compatible with earlier tests:
-//   FEEDBACK | LEFT ticks = ... | RIGHT ticks = ... | LEFT invalid = ... | RIGHT invalid = ...
 
 #include <ctype.h>
 #include <stdint.h>
@@ -36,36 +34,37 @@ const int RIGHT_A = 25;
 const int RIGHT_B = 26;
 
 // ---------- PWM settings ----------
-const int PWM_FREQUENCY = 1000;
-const int PWM_RESOLUTION = 8;
-const int BRAKE_PWM = 255;
-const int MAX_PWM = 255;
+const int PWM_FREQUENCY = 1000; // Motor PWM is switched at 1 kHz
+const int PWM_RESOLUTION = 8;   // 8-bit PWM gives output values from 0 to 255
+const int BRAKE_PWM = 255;      // PWM value used when the motors are actively braked
+const int MAX_PWM = 255;        // Highest motor PWM value that can be commanded
 
 // ---------- Timing ----------
-const unsigned long COMMAND_TIMEOUT_MS = 300;
-const unsigned long FEEDBACK_INTERVAL_MS = 50;
-const size_t SERIAL_COMMAND_BUFFER_SIZE = 64;
+const unsigned long COMMAND_TIMEOUT_MS = 300;  // Stop motors if no command is received after COMMAND_TIMEOUT_MS milliseconds
+const unsigned long FEEDBACK_INTERVAL_MS = 50; // Send encoder feedback every FEEDBACK_INTERVAL_MS milliseconds
+const size_t SERIAL_COMMAND_BUFFER_SIZE = 64;  // Maximum serial command length
 
 // ---------- Encoder counters ----------
-volatile int64_t leftTicks = 0;
-volatile int64_t rightTicks = 0;
-volatile int64_t leftInvalidTransitions = 0;
-volatile int64_t rightInvalidTransitions = 0;
-volatile uint8_t leftEncoderState = 0;
-volatile uint8_t rightEncoderState = 0;
 
-int lastLeftPwm = 0;
-int lastRightPwm = 0;
-bool commandActive = false;
+volatile int64_t leftTicks = 0;               // Accumulated encoder counts for the left side
+volatile int64_t rightTicks = 0;              // Accumulated encoder counts for the right side
+volatile int64_t leftInvalidTransitions = 0;  // Count encoder state changes that do not match a valid quadrature sequence
+volatile int64_t rightInvalidTransitions = 0; // Same as above but for the right encoder
+volatile uint8_t leftEncoderState = 0;        // Store the previous 2-bit encoder state for detecting direction and valid transitions
+volatile uint8_t rightEncoderState = 0;       // Same as above but for the right encoder
 
-unsigned long lastCommandTime = 0;
-unsigned long lastFeedbackTime = 0;
+int lastLeftPwm = 0;        // Most recent PWM command sent to left motor
+int lastRightPwm = 0;       // most recent PWM command sent to right motor
+bool commandActive = false; // Tells the program whether it currently has an active motion command
 
-char serialCommandBuffer[SERIAL_COMMAND_BUFFER_SIZE];
-size_t serialCommandLength = 0;
-bool serialCommandOverflow = false;
+unsigned long lastCommandTime = 0;  // Store when the last command message occurred
+unsigned long lastFeedbackTime = 0; // Store when the last feedback message occurred
 
-struct EncoderSnapshot
+char serialCommandBuffer[SERIAL_COMMAND_BUFFER_SIZE]; // Temporary storage for the text arriving over USB serial
+size_t serialCommandLength = 0;                       // How many characters are currently stored
+bool serialCommandOverflow = false;                   // Becomes true if an incoming command is too long for the buffer
+
+struct EncoderSnapshot // Grouping these related values into one object
 {
   int64_t leftTicks;
   int64_t rightTicks;
@@ -74,18 +73,20 @@ struct EncoderSnapshot
 };
 
 // ---------- Encoder interrupt handling ----------
-// Quadrature encoders are read through interrupt service routines so the firmware
-// can count wheel motion without missing transitions during fast movement.
+// Read encoder channels A and B and combine them into a 2-bit state
 uint8_t IRAM_ATTR readEncoderState(int pinA, int pinB)
 {
   uint8_t a = digitalRead(pinA) ? 1 : 0;
   uint8_t b = digitalRead(pinB) ? 1 : 0;
 
+  // A is the upper bit, and B is the lower bit
   return (a << 1) | b;
 }
 
+// Convert an encoder state change into a forward (+1), reverse (-1), or invalid/no-change (0) step
 int8_t IRAM_ATTR decodeQuadratureTransition(uint8_t previousState, uint8_t currentState)
 {
+  // Combine the previous and current 2-bit states into one 4-bit value
   switch ((previousState << 2) | currentState)
   {
     case 0b0001:
