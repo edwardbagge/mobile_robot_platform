@@ -106,44 +106,45 @@ int8_t IRAM_ATTR decodeQuadratureTransition(uint8_t previousState, uint8_t curre
   }
 }
 
+// Handle a change in the left encoder signals
 void IRAM_ATTR onLeftEncoder()
 {
   uint8_t currentState = readEncoderState(LEFT_A, LEFT_B);
   int8_t step = decodeQuadratureTransition(leftEncoderState, currentState);
 
-  if (step != 0)
+  if (step != 0) // Add or subtract one tick for a valid transition
   {
     leftTicks += step;
   }
-  else if (currentState != leftEncoderState)
+  else if (currentState != leftEncoderState) // Count transitions that changed state but were not valid
   {
     leftInvalidTransitions++;
   }
 
-  leftEncoderState = currentState;
+  leftEncoderState = currentState; // Store the current state for the next transition
 }
 
+// Handle a change in the right encoder signals
 void IRAM_ATTR onRightEncoder()
 {
   uint8_t currentState = readEncoderState(RIGHT_A, RIGHT_B);
   int8_t step = decodeQuadratureTransition(rightEncoderState, currentState);
 
-  if (step != 0)
+  if (step != 0) // Add or subtract one tick for a valid transition
   {
     rightTicks += step;
   }
-  else if (currentState != rightEncoderState)
+  else if (currentState != rightEncoderState) // Count transitions that changed state but were not valid
   {
     rightInvalidTransitions++;
   }
 
-  rightEncoderState = currentState;
+  rightEncoderState = currentState; // Store the current state for the next transition
 }
 
 // ---------- Motor control ----------
-// The motor functions map the signed PWM values from the host computer into the
-// appropriate H-bridge outputs for forward, reverse, or braking behavior.
-int clampPwm(int pwm)
+
+int clampPwm(int pwm) // Limit the PWM command to the allowed range
 {
   if (pwm > MAX_PWM)
   {
@@ -156,23 +157,23 @@ int clampPwm(int pwm)
   return pwm;
 }
 
-void setLeftMotor(int speedValue)
+void setLeftMotor(int speedValue) // Set the left motor direction and PWM output
 {
   speedValue = clampPwm(speedValue);
 
-  if (speedValue > 0)
+  if (speedValue > 0) // Forward direction
   {
     digitalWrite(LEFT_IN1, HIGH);
     digitalWrite(LEFT_IN2, LOW);
     ledcWrite(LEFT_EN, speedValue);
   }
-  else if (speedValue < 0)
+  else if (speedValue < 0) // Reverse direction
   {
     digitalWrite(LEFT_IN1, LOW);
     digitalWrite(LEFT_IN2, HIGH);
     ledcWrite(LEFT_EN, -speedValue);
   }
-  else
+  else // Stop motor (coast to a stop)
   {
     ledcWrite(LEFT_EN, 0);
     digitalWrite(LEFT_IN1, LOW);
@@ -180,23 +181,23 @@ void setLeftMotor(int speedValue)
   }
 }
 
-void setRightMotor(int speedValue)
+void setRightMotor(int speedValue) // Set the right motor direction and PWM output
 {
   speedValue = clampPwm(speedValue);
 
-  if (speedValue > 0)
+  if (speedValue > 0) // Forward direction
   {
     digitalWrite(RIGHT_IN1, HIGH);
     digitalWrite(RIGHT_IN2, LOW);
     ledcWrite(RIGHT_EN, speedValue);
   }
-  else if (speedValue < 0)
+  else if (speedValue < 0) // Reverse direction
   {
     digitalWrite(RIGHT_IN1, LOW);
     digitalWrite(RIGHT_IN2, HIGH);
     ledcWrite(RIGHT_EN, -speedValue);
   }
-  else
+  else // Stop motor (coast to a stop)
   {
     ledcWrite(RIGHT_EN, 0);
     digitalWrite(RIGHT_IN1, LOW);
@@ -204,30 +205,32 @@ void setRightMotor(int speedValue)
   }
 }
 
-void brakeLeftMotor()
+void brakeLeftMotor() // Apply active braking to the left motor
 {
   digitalWrite(LEFT_IN1, HIGH);
   digitalWrite(LEFT_IN2, HIGH);
   ledcWrite(LEFT_EN, BRAKE_PWM);
 }
 
-void brakeRightMotor()
+void brakeRightMotor() // Apply active braking to the right motor
 {
   digitalWrite(RIGHT_IN1, HIGH);
   digitalWrite(RIGHT_IN2, HIGH);
   ledcWrite(RIGHT_EN, BRAKE_PWM);
 }
 
-void releaseMotors()
+void releaseMotors() // Stop driving both motors without active braking
 {
   setLeftMotor(0);
   setRightMotor(0);
+
+  // Clear the stored motor command
   lastLeftPwm = 0;
   lastRightPwm = 0;
   commandActive = false;
 }
 
-void brakeMotors()
+void brakeMotors() // Actively brake both motors and clear the current command
 {
   brakeLeftMotor();
   brakeRightMotor();
@@ -238,21 +241,25 @@ void brakeMotors()
   Serial.println("Motors stopped with active brake.");
 }
 
-void applyMotorCommand(int leftPwm, int rightPwm)
+void applyMotorCommand(int leftPwm, int rightPwm) // Apply a new PWM command to both motors
 {
+  // Keep both commands within the allowed PWM range
   leftPwm = clampPwm(leftPwm);
   rightPwm = clampPwm(rightPwm);
+
+  // Check whether the new command differs from the previous one
   bool commandChanged = (leftPwm != lastLeftPwm || rightPwm != lastRightPwm);
 
   setLeftMotor(leftPwm);
   setRightMotor(rightPwm);
 
+  // Store the current command and update its timestamp
   lastLeftPwm = leftPwm;
   lastRightPwm = rightPwm;
   commandActive = (leftPwm != 0 || rightPwm != 0);
   lastCommandTime = millis();
 
-  if (commandChanged)
+  if (commandChanged) // Print only when the commanded PWM values change
   {
     Serial.print("CONTROL | LEFT pwm = ");
     Serial.print(leftPwm);
@@ -262,9 +269,8 @@ void applyMotorCommand(int leftPwm, int rightPwm)
 }
 
 // ---------- Encoder helper functions ----------
-// These helpers make it easy to snapshot the encoder counters atomically and to
-// reset them when the host requests a fresh baseline.
-EncoderSnapshot getEncoderSnapshot()
+
+EncoderSnapshot getEncoderSnapshot() // Copy all encoder counters without allowing interrupts to change them
 {
   EncoderSnapshot snapshot;
   noInterrupts();
@@ -276,7 +282,7 @@ EncoderSnapshot getEncoderSnapshot()
   return snapshot;
 }
 
-void resetEncoderCounts()
+void resetEncoderCounts() // Reset encoder counters and store the current encoder states
 {
   noInterrupts();
   leftTicks = 0;
@@ -290,7 +296,7 @@ void resetEncoderCounts()
   Serial.println("Encoder counts reset.");
 }
 
-void printEncoderFeedback()
+void printEncoderFeedback() // Print the current encoder counts and invalid-transition counts
 {
   const EncoderSnapshot snapshot = getEncoderSnapshot();
   char feedbackLine[160];
@@ -307,7 +313,7 @@ void printEncoderFeedback()
   Serial.println(feedbackLine);
 }
 
-void printStatus()
+void printStatus() // Print the current motor command, timing settings, and encoder feedback
 {
   Serial.println();
   Serial.println("=== ROBOT BASE STATUS ===");
@@ -326,22 +332,22 @@ void printStatus()
 }
 
 // ---------- Serial command handler ----------
-// The firmware expects simple text commands from the serial link. Each newline
-// terminates a command, which is then parsed and applied immediately.
-char *trimWhitespace(char *text)
+
+char *trimWhitespace(char *text) // Remove whitespace from the beginning and end of a command
 {
-  while (*text != '\0' && isspace(static_cast<unsigned char>(*text)))
+  while (*text != '\0' && isspace(static_cast<unsigned char>(*text))) // Skip whitespace at the beginning
   {
     text++;
   }
 
-  if (*text == '\0')
+  if (*text == '\0') // Return immediately if the string is empty
   {
     return text;
   }
 
-  char *end = text + strlen(text) - 1;
-  while (end > text && isspace(static_cast<unsigned char>(*end)))
+  char *end = text + strlen(text) - 1; // Find the last character in the string
+  
+  while (end > text && isspace(static_cast<unsigned char>(*end))) // Remove whitespace from the end
   {
     *end = '\0';
     end--;
@@ -350,33 +356,37 @@ char *trimWhitespace(char *text)
   return text;
 }
 
-bool parseMotorCommand(const char *command, int &leftPwm, int &rightPwm)
+bool parseMotorCommand(const char *command, int &leftPwm, int &rightPwm) // Read the left and right PWM values from an M command
 {
-  if (command[0] != 'M' && command[0] != 'm')
+  if (command[0] != 'M' && command[0] != 'm') // Motor commands must begin with M
   {
     return false;
   }
 
+  // Read the first number as the left motor PWM
   char *parseEnd = nullptr;
   long parsedLeft = strtol(command + 1, &parseEnd, 10);
-  if (parseEnd == command + 1)
+  
+  if (parseEnd == command + 1) // Fail if no number was found
   {
     return false;
   }
 
+  // Read the second number as the right motor PWM
   char *rightStart = parseEnd;
   long parsedRight = strtol(rightStart, &parseEnd, 10);
-  if (parseEnd == rightStart)
+  
+  if (parseEnd == rightStart) // Fail if no second number was found
   {
     return false;
   }
 
-  while (*parseEnd != '\0' && isspace(static_cast<unsigned char>(*parseEnd)))
+  while (*parseEnd != '\0' && isspace(static_cast<unsigned char>(*parseEnd))) // Skip any whitespace after the second number
   {
     parseEnd++;
   }
 
-  if (*parseEnd != '\0')
+  if (*parseEnd != '\0') // Reject the command if any other characters remain
   {
     return false;
   }
@@ -386,28 +396,30 @@ bool parseMotorCommand(const char *command, int &leftPwm, int &rightPwm)
   return true;
 }
 
-void handleCommand(const char *rawCommand)
+void handleCommand(const char *rawCommand) // Process one complete serial command
 {
+  // Copy the received command into a local buffer
   char commandBuffer[SERIAL_COMMAND_BUFFER_SIZE];
   strncpy(commandBuffer, rawCommand, sizeof(commandBuffer) - 1);
   commandBuffer[sizeof(commandBuffer) - 1] = '\0';
 
-  char *command = trimWhitespace(commandBuffer);
+  char *command = trimWhitespace(commandBuffer); // Remove whitespace from the beginning and end
 
-  if (*command == '\0')
+  if (*command == '\0') // Ignore empty commands
   {
     return;
   }
 
-  char commandType = static_cast<char>(toupper(static_cast<unsigned char>(command[0])));
-  if (commandType != 'M' && commandType != 'X' && commandType != 'Z' && commandType != 'S')
+  char commandType = static_cast<char>(toupper(static_cast<unsigned char>(command[0]))); // Read the first character and convert it to uppercase
+  
+  if (commandType != 'M' && commandType != 'X' && commandType != 'Z' && commandType != 'S') // Ignore data that does not begin with a valid command letter
   {
     Serial.print("Ignored serial noise: ");
     Serial.println(command);
     return;
   }
 
-  if (commandType == 'M' || commandType == 'm')
+  if (commandType == 'M' || commandType == 'm') // M: apply left and right motor PWM commands
   {
     int leftPwm = 0;
     int rightPwm = 0;
@@ -421,17 +433,17 @@ void handleCommand(const char *rawCommand)
       Serial.print("Invalid motor command: ");
       Serial.println(command);
     }
-  }
-  else if (commandType == 'X' || commandType == 'x')
+  }  
+  else if (commandType == 'X' || commandType == 'x') // X: actively brake both motors
   {
     brakeMotors();
     printEncoderFeedback();
   }
-  else if (commandType == 'Z' || commandType == 'z')
+  else if (commandType == 'Z' || commandType == 'z') // Z: reset encoder counts
   {
     resetEncoderCounts();
   }
-  else if (commandType == 'S' || commandType == 's')
+  else if (commandType == 'S' || commandType == 's') // S: print the current robot status
   {
     printStatus();
   }
@@ -442,18 +454,18 @@ void handleCommand(const char *rawCommand)
   }
 }
 
-void processSerialInput()
+void processSerialInput() // Read serial input and build complete commands line by line
 {
   while (Serial.available() > 0)
   {
     char incomingByte = static_cast<char>(Serial.read());
 
-    if (incomingByte == '\r')
+    if (incomingByte == '\r') // Ignore carriage-return characters
     {
       continue;
     }
 
-    if (incomingByte == '\n')
+    if (incomingByte == '\n') // A newline marks the end of a command
     {
       if (serialCommandOverflow)
       {
@@ -461,36 +473,38 @@ void processSerialInput()
       }
       else if (serialCommandLength > 0)
       {
+        // End the string and process the completed command
         serialCommandBuffer[serialCommandLength] = '\0';
         handleCommand(serialCommandBuffer);
       }
 
+      // Prepare for the next command
       serialCommandLength = 0;
       serialCommandOverflow = false;
       continue;
     }
 
-    if (serialCommandOverflow)
+    if (serialCommandOverflow) // Ignore remaining characters if the command already overflowed
     {
       continue;
     }
 
-    if (serialCommandLength >= SERIAL_COMMAND_BUFFER_SIZE - 1)
+    if (serialCommandLength >= SERIAL_COMMAND_BUFFER_SIZE - 1) // Reject commands that are too long for the buffer
     {
       serialCommandLength = 0;
       serialCommandOverflow = true;
       continue;
     }
 
+    // Add the received character to the command buffer
     serialCommandBuffer[serialCommandLength] = incomingByte;
     serialCommandLength++;
   }
 }
 
 // ---------- Periodic checks ----------
-// The main loop periodically checks for stale commands and emits encoder feedback.
-// If a command stops arriving, the robot is forced to brake for safety.
-void checkCommandTimeout()
+
+void checkCommandTimeout() // Brake the motors if an active command has not been updated within the timeout
 {
   if (commandActive && millis() - lastCommandTime >= COMMAND_TIMEOUT_MS)
   {
@@ -500,7 +514,7 @@ void checkCommandTimeout()
   }
 }
 
-void checkFeedbackPrint()
+void checkFeedbackPrint() // Send encoder feedback at the configured interval
 {
   if (millis() - lastFeedbackTime >= FEEDBACK_INTERVAL_MS)
   {
@@ -510,34 +524,40 @@ void checkFeedbackPrint()
 }
 
 // ---------- Setup ----------
-// Setup initializes the serial port, motor pins, encoder inputs, PWM outputs,
-// and the initial motor/encoder state before normal operation begins.
-void setup()
+
+void setup() // Initialize communication, motor control, encoders, and PWM
 {
+  // Start USB serial communication at 115200 baud
   Serial.begin(115200);
   delay(2000);
 
+  // Configure H-bridge direction pins as outputs
   pinMode(LEFT_IN1, OUTPUT);
   pinMode(LEFT_IN2, OUTPUT);
   pinMode(RIGHT_IN1, OUTPUT);
   pinMode(RIGHT_IN2, OUTPUT);
 
+  // Configure encoder channels as inputs
   pinMode(LEFT_A, INPUT);
   pinMode(LEFT_B, INPUT);
   pinMode(RIGHT_A, INPUT);
   pinMode(RIGHT_B, INPUT);
 
+  // Store the encoder states at startup
   leftEncoderState = readEncoderState(LEFT_A, LEFT_B);
   rightEncoderState = readEncoderState(RIGHT_A, RIGHT_B);
 
+  // Call the encoder interrupt functions whenever an encoder signal changes
   attachInterrupt(digitalPinToInterrupt(LEFT_A), onLeftEncoder, CHANGE);
   attachInterrupt(digitalPinToInterrupt(LEFT_B), onLeftEncoder, CHANGE);
   attachInterrupt(digitalPinToInterrupt(RIGHT_A), onRightEncoder, CHANGE);
   attachInterrupt(digitalPinToInterrupt(RIGHT_B), onRightEncoder, CHANGE);
 
+  // Configure the PWM outputs used to control motor speed
   ledcAttach(LEFT_EN, PWM_FREQUENCY, PWM_RESOLUTION);
   ledcAttach(RIGHT_EN, PWM_FREQUENCY, PWM_RESOLUTION);
 
+  // Start with the motors stopped and encoder counts at zero
   releaseMotors();
   resetEncoderCounts();
 
@@ -551,7 +571,7 @@ void setup()
   Serial.println();
 }
 
-void loop()
+void loop() // Continuously process commands, check the safety timeout, and send feedback
 {
   processSerialInput();
   checkCommandTimeout();
