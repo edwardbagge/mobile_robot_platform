@@ -1,30 +1,21 @@
 // base_serial_bridge.cpp
-// ROS 2 bridge between high-level robot motion commands and the ESP32 firmware.
+// ROS 2 bridge between robot motion commands and the ESP32.
 //
-// This node is the interface between the ROS 2 side of the robot and the
-// low-level hardware controller. In practical terms, it receives a desired
-// motion command from ROS 2, converts that command into left/right wheel PWM
-// values, sends those values to the ESP32 over USB serial, and then listens for
-// encoder feedback from the firmware so that the rest of the system can know
-// how the wheels actually moved.
-//
-// ROS 2 data flow:
-// - Input topic: /cmd_vel (geometry_msgs/msg/Twist) or /wheel_pwm_cmd
-//   (std_msgs/msg/Int32MultiArray), depending on configuration.
-// - Output topics: /left_encoder_ticks and /right_encoder_ticks
-//   (std_msgs/msg/Int64), published from the feedback received over serial.
-// - The node communicates with the firmware using a simple text protocol over a
-//   serial port, for example: "M -80 80" to command the motors.
+// Receives motion commands from ROS 2, converts them to left/right motor PWM,
+// sends them to the ESP32 over USB serial, and publishes encoder feedback.
 
+// These are related to ROS 2
 #include <geometry_msgs/msg/twist.hpp>
 #include <rclcpp/rclcpp.hpp>
 #include <std_msgs/msg/int32_multi_array.hpp>
 #include <std_msgs/msg/int64.hpp>
 
+// These are are Linux/system headers mainly used for the USB serial connection
 #include <fcntl.h>
 #include <termios.h>
 #include <unistd.h>
 
+// These are standard C++ headers
 #include <algorithm>
 #include <atomic>
 #include <cerrno>
@@ -41,7 +32,7 @@
 
 using namespace std::chrono_literals;
 
-class BaseSerialBridgeNode : public rclcpp::Node
+class BaseSerialBridgeNode : public rclcpp::Node // ROS 2 node that handles serial communication with the ESP32
 {
 public:
   // The constructor configures the node parameters, sets up the ROS 2
@@ -51,23 +42,25 @@ public:
   BaseSerialBridgeNode()
   : Node("base_serial_bridge"), running_(true)
   {
-    serial_port_ = this->declare_parameter<std::string>("serial_port", "/dev/ttyUSB0");
-    command_source_ = this->declare_parameter<std::string>("command_source", "cmd_vel");
-    command_rate_hz_ = this->declare_parameter<double>("command_rate_hz", 20.0);
-    command_timeout_s_ = this->declare_parameter<double>("command_timeout_s", 0.25);
-    wheel_base_m_ = this->declare_parameter<double>("wheel_base_m", 0.16);
-    max_wheel_speed_mps_ = this->declare_parameter<double>("max_wheel_speed_mps", 0.25);
-    max_pwm_ = this->declare_parameter<int>("max_pwm", 80);
-    min_pwm_ = this->declare_parameter<int>("min_pwm", 0);
-    left_pwm_scale_ = this->declare_parameter<double>("left_pwm_scale", 1.0);
-    right_pwm_scale_ = this->declare_parameter<double>("right_pwm_scale", 1.0);
-    linear_deadband_mps_ = this->declare_parameter<double>("linear_deadband_mps", 0.005);
-    angular_deadband_rps_ = this->declare_parameter<double>("angular_deadband_rps", 0.01);
-    active_brake_on_stop_ = this->declare_parameter<bool>("active_brake_on_stop", true);
-    startup_delay_s_ = this->declare_parameter<double>("startup_delay_s", 2.5);
+    serial_port_ = this->declare_parameter<std::string>("serial_port", "/dev/ttyUSB0");    // Serial device used for communication with the ESP32
+    command_source_ = this->declare_parameter<std::string>("command_source", "cmd_vel");   // Select whether commands come from /cmd_vel or /wheel_pwm_cmd
+    command_rate_hz_ = this->declare_parameter<double>("command_rate_hz", 20.0);           // Number of motor commands sent to the ESP32 per second
+    command_timeout_s_ = this->declare_parameter<double>("command_timeout_s", 0.25);       // Stop the robot if no new command is received within this time
+    wheel_base_m_ = this->declare_parameter<double>("wheel_base_m", 0.16);                 // Distance between the left and right wheels
+    max_wheel_speed_mps_ = this->declare_parameter<double>("max_wheel_speed_mps", 0.25);   // Wheel speed corresponding to the maximum PWM command
+    max_pwm_ = this->declare_parameter<int>("max_pwm", 80);                                // Maximum PWM value sent to the ESP32
+    min_pwm_ = this->declare_parameter<int>("min_pwm", 0);                                 // Minimum non-zero PWM value
+    left_pwm_scale_ = this->declare_parameter<double>("left_pwm_scale", 1.0);              // Scale factor applied to the left motor PWM
+    right_pwm_scale_ = this->declare_parameter<double>("right_pwm_scale", 1.0);            // Scale factor applied to the right motor PWM
+    linear_deadband_mps_ = this->declare_parameter<double>("linear_deadband_mps", 0.005);  // Treat very small linear velocity commands as zero
+    angular_deadband_rps_ = this->declare_parameter<double>("angular_deadband_rps", 0.01); // Treat very small angular velocity commands as zero
+    active_brake_on_stop_ = this->declare_parameter<bool>("active_brake_on_stop", true);   // Use active braking when the commanded motion is zero
+    startup_delay_s_ = this->declare_parameter<double>("startup_delay_s", 2.5);            // Delay before communicating with the ESP32 after opening the serial port
 
-    max_pwm_ = std::clamp(max_pwm_, 0, 255);
-    min_pwm_ = std::clamp(min_pwm_, 0, max_pwm_);
+    max_pwm_ = std::clamp(max_pwm_, 0, 255);                   // Keep PWM limits within the 8-bit range supported by the ESP32 firmware
+    min_pwm_ = std::clamp(min_pwm_, 0, max_pwm_);              // Keep the minimum PWM between zero and the configured maximum
+
+    // Limit motor-specific scaling factors to a reasonable range
     left_pwm_scale_ = std::clamp(left_pwm_scale_, 0.0, 2.0);
     right_pwm_scale_ = std::clamp(right_pwm_scale_, 0.0, 2.0);
 
