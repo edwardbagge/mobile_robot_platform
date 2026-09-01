@@ -1,23 +1,16 @@
 // wheel_odometry.cpp
 // ROS 2 odometry node for the differential-drive robot.
 //
-// This node estimates the robot's position and orientation from the left and
-// right wheel encoder counts. The result is published as a standard ROS 2
-// odometry message and, optionally, as a TF transform between the odom and
-// base_link frames.
-//
-// ROS 2 data flow:
-// - Input topics: /left_encoder_ticks and /right_encoder_ticks
-//   (std_msgs/msg/Int64), published by the serial bridge.
-// - Output topic: /odom (nav_msgs/msg/Odometry).
-// - Optional output: TF transform from odom -> base_link.
+// Uses left and right wheel encoder counts to estimate the robot's position,
+// orientation, and velocity, and publishes the result as /odom.
 
+// Standard C++ libraries used for calculations, memory management, and strings
 #include <algorithm>
 #include <cmath>
 #include <memory>
 #include <string>
 
-class WheelOdometryNode : public rclcpp::Node
+class WheelOdometryNode : public rclcpp::Node // ROS 2 node that calculates odometry from wheel encoder counts
 {
 public:
   // The constructor sets up the subscriptions, publisher, timer, and optional TF
@@ -26,40 +19,39 @@ public:
   WheelOdometryNode()
   : Node("wheel_odometry")
   {
-    ticks_per_revolution_ = this->declare_parameter<double>("ticks_per_revolution", 700.0);
-    wheel_radius_m_ = this->declare_parameter<double>("wheel_radius_m", 0.03);
-    wheel_base_m_ = this->declare_parameter<double>("wheel_base_m", 0.16);
-    max_wheel_speed_mps_ = this->declare_parameter<double>("max_wheel_speed_mps", 0.10);
-    max_tick_jump_scale_ = this->declare_parameter<double>("max_tick_jump_scale", 3.0);
-    publish_tf_ = this->declare_parameter<bool>("publish_tf", true);
-    publish_rate_hz_ = this->declare_parameter<double>("publish_rate_hz", 20.0);
-    publish_rate_hz_ = std::max(publish_rate_hz_, 1.0);
-    odom_frame_id_ = this->declare_parameter<std::string>("odom_frame_id", "odom");
-    base_frame_id_ = this->declare_parameter<std::string>("base_frame_id", "base_link");
+    ticks_per_revolution_ = this->declare_parameter<double>("ticks_per_revolution", 700.0); // Number of encoder ticks produced by one full wheel revolution
+    wheel_radius_m_ = this->declare_parameter<double>("wheel_radius_m", 0.03);              // Radius of each drive wheel in meters
+    wheel_base_m_ = this->declare_parameter<double>("wheel_base_m", 0.16);                  // Distance between the left and right wheels
+    max_wheel_speed_mps_ = this->declare_parameter<double>("max_wheel_speed_mps", 0.10);    // Maximum expected wheel speed
+    max_tick_jump_scale_ = this->declare_parameter<double>("max_tick_jump_scale", 3.0);     // Allow encoder changes up to this multiple of the expected maximum
+    publish_tf_ = this->declare_parameter<bool>("publish_tf", true);                        // Choose whether to publish the odom -> base_link TF transform
+    publish_rate_hz_ = this->declare_parameter<double>("publish_rate_hz", 20.0);            // Number of odometry updates published per second
+    publish_rate_hz_ = std::max(publish_rate_hz_, 1.0);                                     // Prevent the publishing rate from going below 1 Hz
+    odom_frame_id_ = this->declare_parameter<std::string>("odom_frame_id", "odom");         // Name of the odometry reference frame
+    base_frame_id_ = this->declare_parameter<std::string>("base_frame_id", "base_link");    // Name of the robot body frame
 
     // Publish the estimated robot state as a standard ROS 2 odometry message.
     odom_publisher_ = this->create_publisher<nav_msgs::msg::Odometry>("/odom", 10);
 
-    if (publish_tf_) {
+    if (publish_tf_) // Create the TF broadcaster if TF publishing is enabled
+    {
       tf_broadcaster_ = std::make_unique<tf2_ros::TransformBroadcaster>(*this);
     }
 
-    // Subscribe to the encoder tick topics that are published by the serial
-    // bridge after the ESP32 reports wheel movement.
     left_subscription_ = this->create_subscription<std_msgs::msg::Int64>(
       "/left_encoder_ticks",
       10,
-      std::bind(&WheelOdometryNode::leftTicksCallback, this, std::placeholders::_1));
+      std::bind(&WheelOdometryNode::leftTicksCallback, this, std::placeholders::_1)); // Subscribe to left encoder tick counts
 
     right_subscription_ = this->create_subscription<std_msgs::msg::Int64>(
       "/right_encoder_ticks",
       10,
-      std::bind(&WheelOdometryNode::rightTicksCallback, this, std::placeholders::_1));
+      std::bind(&WheelOdometryNode::rightTicksCallback, this, std::placeholders::_1)); // Subscribe to right encoder tick counts
 
-    const auto publish_period = std::chrono::duration<double>(1.0 / publish_rate_hz_);
+    const auto publish_period = std::chrono::duration<double>(1.0 / publish_rate_hz_);// Calculate the time between odometry updates
     timer_ = this->create_wall_timer(
       std::chrono::duration_cast<std::chrono::nanoseconds>(publish_period),
-      std::bind(&WheelOdometryNode::publishOdometry, this));
+      std::bind(&WheelOdometryNode::publishOdometry, this)); // Call publishOdometry repeatedly at the configured rate
 
     RCLCPP_INFO(this->get_logger(), "Wheel odometry started.");
     RCLCPP_INFO(this->get_logger(), "Subscribing to /left_encoder_ticks and /right_encoder_ticks");
