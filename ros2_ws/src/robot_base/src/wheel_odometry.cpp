@@ -65,44 +65,60 @@ public:
   }
 
 private:
+
+  // Encoder and robot geomtry parameters
   double ticks_per_revolution_;
   double wheel_radius_m_;
   double wheel_base_m_;
+
+  // Limits used for rejecting unrealistic encoder jumps
   double max_wheel_speed_mps_;
   double max_tick_jump_scale_;
+
+  // Odometry publishing settings
   bool publish_tf_;
   double publish_rate_hz_;
+
+  // Names of the coordinate frames used for odometry
   std::string odom_frame_id_;
   std::string base_frame_id_;
 
+  // Latest encoder tick counts received
   int64_t current_left_ticks_ = 0;
   int64_t current_right_ticks_ = 0;
+
+  // Encoder counts used during the previous odometry update
   int64_t last_processed_left_ticks_ = 0;
   int64_t last_processed_right_ticks_ = 0;
 
+  // Track whether encoder data has been received
   bool left_ticks_received_ = false;
   bool right_ticks_received_ = false;
-  bool odom_initialized_ = false;
 
+  bool odom_initialized_ = false; // Track whether the first odometry reference values have been stored
+
+  // Current estimated robot position and heading
   double x_m_ = 0.0;
   double y_m_ = 0.0;
   double yaw_rad_ = 0.0;
-  rclcpp::Time last_publish_time_{0, 0, RCL_ROS_TIME};
 
+  rclcpp::Time last_publish_time_{0, 0, RCL_ROS_TIME}; // Time of the previous odometry update
+                                  
+  // ROS 2 subscriptions for encoder tick counts
   rclcpp::Subscription<std_msgs::msg::Int64>::SharedPtr left_subscription_;
   rclcpp::Subscription<std_msgs::msg::Int64>::SharedPtr right_subscription_;
-  rclcpp::Publisher<nav_msgs::msg::Odometry>::SharedPtr odom_publisher_;
-  rclcpp::TimerBase::SharedPtr timer_;
-  std::unique_ptr<tf2_ros::TransformBroadcaster> tf_broadcaster_;
+                               
+  rclcpp::Publisher<nav_msgs::msg::Odometry>::SharedPtr odom_publisher_; // ROS 2 publisher for odometry 
+  rclcpp::TimerBase::SharedPtr timer_;                                   // Timer used for periodic odometry updates
+  std::unique_ptr<tf2_ros::TransformBroadcaster> tf_broadcaster_;        // Optional broadcaster for the odom -> base_link transform
 
-  // Store the latest encoder count for the left wheel.
-  void leftTicksCallback(const std_msgs::msg::Int64::SharedPtr msg)
+  void leftTicksCallback(const std_msgs::msg::Int64::SharedPtr msg) // Store the latest encoder count for the left wheel
   {
     current_left_ticks_ = msg->data;
     left_ticks_received_ = true;
   }
 
-  void rightTicksCallback(const std_msgs::msg::Int64::SharedPtr msg)
+  void rightTicksCallback(const std_msgs::msg::Int64::SharedPtr msg) // Store the latest encoder count for the right wheel
   {
     current_right_ticks_ = msg->data;
     right_ticks_received_ = true;
@@ -112,13 +128,15 @@ private:
   // previous update and then updates the estimated position and heading.
   void publishOdometry()
   {
-    if (!left_ticks_received_ || !right_ticks_received_) {
+    if (!left_ticks_received_ || !right_ticks_received_) // Wait until both encoder topics have provided data
+    {
       return;
     }
 
-    const rclcpp::Time now = this->get_clock()->now();
+    const rclcpp::Time now = this->get_clock()->now(); // Get the current ROS 2 time
 
-    if (!odom_initialized_) {
+    if (!odom_initialized_) // Store the first encoder values as the starting reference
+    {
       last_processed_left_ticks_ = current_left_ticks_;
       last_processed_right_ticks_ = current_right_ticks_;
       last_publish_time_ = now;
@@ -126,8 +144,10 @@ private:
       return;
     }
 
-    const double dt = (now - last_publish_time_).seconds();
-    if (dt <= 0.0) {
+    const double dt = (now - last_publish_time_).seconds(); // Calculate the time since the previous odometry update
+    
+    if (dt <= 0.0) // Ignore invalid time intervals
+    {
       return;
     }
 
@@ -136,21 +156,27 @@ private:
     const int64_t delta_left_ticks = current_left_ticks_ - last_processed_left_ticks_;
     const int64_t delta_right_ticks = current_right_ticks_ - last_processed_right_ticks_;
 
-    if (tickJumpLooksInvalid(delta_left_ticks, dt) || tickJumpLooksInvalid(delta_right_ticks, dt)) {
+    if (tickJumpLooksInvalid(delta_left_ticks, dt) || tickJumpLooksInvalid(delta_right_ticks, dt)) // Reject unrealistically large encoder changes
+    {
+      // Reset the reference counts so the bad jump is not used later
       last_processed_left_ticks_ = current_left_ticks_;
       last_processed_right_ticks_ = current_right_ticks_;
       last_publish_time_ = now;
 
+      // Print a warning, but not more often than once every two seconds
       RCLCPP_WARN_THROTTLE(
         this->get_logger(),
         *this->get_clock(),
         2000,
         "Ignoring implausible encoder tick jump. Resetting odometry delta state.");
 
-      publishOdometryMessage(now, 0.0, 0.0);
-      if (publish_tf_) {
-        publishTransform(now);
+      publishOdometryMessage(now, 0.0, 0.0); // Publish the current pose with zero velocity
+      
+      if (publish_tf_) 
+      {
+        publishTransform(now); // Publish the current TF transform if enabled
       }
+      
       return;
     }
 
@@ -167,6 +193,7 @@ private:
 
     // Use the midpoint heading to reduce integration error during turns.
     const double heading_mid_rad = yaw_rad_ + (0.5 * delta_yaw_rad);
+    
     // Update the estimated pose in the world frame based on the robot's motion.
     // The robot moves forward along its current heading and rotates by the
     // computed yaw change.
@@ -177,15 +204,18 @@ private:
     const double linear_velocity_mps = center_distance_m / dt;
     const double angular_velocity_rps = delta_yaw_rad / dt;
 
-    publishOdometryMessage(now, linear_velocity_mps, angular_velocity_rps);
+    publishOdometryMessage(now, linear_velocity_mps, angular_velocity_rps); // Publish the updated odometry message
 
-    if (publish_tf_) {
+    if (publish_tf_) // Publish the odom -> base_link transform if enabled
+    {
       publishTransform(now);
     }
 
+    // STore the current encoder counts for the next update
     last_processed_left_ticks_ = current_left_ticks_;
     last_processed_right_ticks_ = current_right_ticks_;
-    last_publish_time_ = now;
+    
+    last_publish_time_ = now; // Store the current time for the next velocity calculation
   }
 
   // Publish the estimated pose and velocity in the standard nav_msgs/Odometry
@@ -196,19 +226,24 @@ private:
     double angular_velocity_rps)
   {
     nav_msgs::msg::Odometry odom_msg;
-    odom_msg.header.stamp = stamp;
+
+    // Set the message timestamp and coordinate frames
+    odom_msg.header.stamp = stamp;             
     odom_msg.header.frame_id = odom_frame_id_;
     odom_msg.child_frame_id = base_frame_id_;
 
+    // Store the estimated robot position
     odom_msg.pose.pose.position.x = x_m_;
     odom_msg.pose.pose.position.y = y_m_;
     odom_msg.pose.pose.position.z = 0.0;
-    odom_msg.pose.pose.orientation = yawToQuaternion(yaw_rad_);
 
+    odom_msg.pose.pose.orientation = yawToQuaternion(yaw_rad_); // Store the estimated robot orientation
+
+    // Store the estimated linear and angular velocities
     odom_msg.twist.twist.linear.x = linear_velocity_mps;
     odom_msg.twist.twist.angular.z = angular_velocity_rps;
 
-    odom_publisher_->publish(odom_msg);
+    odom_publisher_->publish(odom_msg); // Publish the completed odometry message
   }
 
   // Publish the TF transform that links the odom frame to the robot body frame.
@@ -217,28 +252,35 @@ private:
   void publishTransform(const rclcpp::Time & stamp)
   {
     geometry_msgs::msg::TransformStamped transform_msg;
+
+    // Set the timestamp and coordinate frames
     transform_msg.header.stamp = stamp;
     transform_msg.header.frame_id = odom_frame_id_;
     transform_msg.child_frame_id = base_frame_id_;
 
+    // Store the robot position in the transform
     transform_msg.transform.translation.x = x_m_;
     transform_msg.transform.translation.y = y_m_;
     transform_msg.transform.translation.z = 0.0;
-    transform_msg.transform.rotation = yawToQuaternion(yaw_rad_);
+    
+    transform_msg.transform.rotation = yawToQuaternion(yaw_rad_); // Store the robot orientation in the transform
 
-    tf_broadcaster_->sendTransform(transform_msg);
+    tf_broadcaster_->sendTransform(transform_msg); // Broad the transform to the ROS 2 TF system
   }
 
-  geometry_msgs::msg::Quaternion yawToQuaternion(double yaw_rad) const
+  geometry_msgs::msg::Quaternion yawToQuaternion(double yaw_rad) const // Convert the robot's yaw angle into a quaternion for ROS 2 messages
   {
     tf2::Quaternion quaternion;
-    quaternion.setRPY(0.0, 0.0, yaw_rad);
+    
+    quaternion.setRPY(0.0, 0.0, yaw_rad); // Create a rotation with zero roll, zero pitch, and the current yaw angle
 
+    // Copy the quaternion values into a ROS 2 message
     geometry_msgs::msg::Quaternion msg;
     msg.x = quaternion.x();
     msg.y = quaternion.y();
     msg.z = quaternion.z();
     msg.w = quaternion.w();
+    
     return msg;
   }
 
@@ -246,22 +288,24 @@ private:
   // not create large fake motions in the odometry estimate.
   bool tickJumpLooksInvalid(int64_t delta_ticks, double dt) const
   {
-    if (dt <= 0.0 || ticks_per_revolution_ <= 0.0 || wheel_radius_m_ <= 0.0) {
+    if (dt <= 0.0 || ticks_per_revolution_ <= 0.0 || wheel_radius_m_ <= 0.0) // Treat invalid timing or wheel parameters as an invalid result
+    {
       return true;
     }
 
     const double max_ticks =
       (std::abs(max_wheel_speed_mps_) * std::max(max_tick_jump_scale_, 1.0) * dt) /
-      metersPerTick();
-    return static_cast<double>(std::abs(delta_ticks)) > std::max(1.0, max_ticks);
+      metersPerTick(); // Calculate the largest reasonable number of ticks for this time interval
+    
+    return static_cast<double>(std::abs(delta_ticks)) > std::max(1.0, max_ticks); // Return true if measured tick change is larger than the allowed limit
   }
 
-  double metersPerTick() const
+  double metersPerTick() const // Calculate how far the wheel travels for once encoder tick
   {
     return (2.0 * M_PI * wheel_radius_m_) / ticks_per_revolution_;
   }
 
-  double normalizeAngle(double angle_rad) const
+  double normalizeAngle(double angle_rad) const // Keep the yaw angle within the range -pi to +pi
   {
     while (angle_rad > M_PI) {
       angle_rad -= 2.0 * M_PI;
@@ -273,11 +317,11 @@ private:
   }
 };
 
-int main(int argc, char ** argv)
+int main(int argc, char ** argv) // Start ROS 2 and run the wheel odometry node
 {
-  rclcpp::init(argc, argv);
-  auto node = std::make_shared<WheelOdometryNode>();
-  rclcpp::spin(node);
-  rclcpp::shutdown();
+  rclcpp::init(argc, argv);                           // Initialize ROS 2
+  auto node = std::make_shared<WheelOdometryNode>();  // Create the wheel odometry node
+  rclcpp::spin(node);                                 // Keep the node running and process its callbacks
+  rclcpp::shutdown();                                 // Shut down ROS 2 when the node stops
   return 0;
 }
