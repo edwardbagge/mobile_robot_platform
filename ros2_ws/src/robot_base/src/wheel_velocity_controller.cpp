@@ -307,16 +307,17 @@ private:
   // Create a base PWM command from the desired wheel speed. This gives the
   // motor a first approximation of the needed effort before any correction is
   // applied based on feedback.
-  int feedforwardPwm(double target_mps) const
+  int feedforwardPwm(double target_mps) const 
   {
-    if (std::abs(target_mps) < linear_deadband_mps_ || max_wheel_speed_mps_ <= 0.0) {
+    if (std::abs(target_mps) < linear_deadband_mps_ || max_wheel_speed_mps_ <= 0.0) // Return zero for very small target speeds or an invalid maximum speed
+    {
       return 0;
     }
 
     int pwm = static_cast<int>(
-      std::lround((target_mps / max_wheel_speed_mps_) * static_cast<double>(max_pwm_)));
-    pwm = std::clamp(pwm, -max_pwm_, max_pwm_);
-    return enforceMinPwm(pwm);
+      std::lround((target_mps / max_wheel_speed_mps_) * static_cast<double>(max_pwm_))); // Map the target wheel speed proportionally to the PWM range
+    pwm = std::clamp(pwm, -max_pwm_, max_pwm_);                                          // Keep the PWM value within the allowed range
+    return enforceMinPwm(pwm);                                                           // Apply the configured minimum non-zero PWM
   }
 
   // Compute the final PWM command by combining a feedforward term with a
