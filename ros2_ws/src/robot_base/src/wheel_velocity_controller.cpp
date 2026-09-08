@@ -325,23 +325,28 @@ private:
   // the target speed and the measured speed.
   int computePwm(double target_mps, double actual_mps) const
   {
-    if (std::abs(target_mps) < linear_deadband_mps_) {
+    if (std::abs(target_mps) < linear_deadband_mps_) // Stop the wheel when the target speed is within the deadband
+    {
       return 0;
     }
 
-    const int base_pwm = feedforwardPwm(target_mps);
-    const double error_mps = target_mps - actual_mps;
-    int pwm = base_pwm + static_cast<int>(std::lround(kp_pwm_per_mps_ * error_mps));
-    pwm = std::clamp(pwm, -max_pwm_, max_pwm_);
-    return enforceMinPwm(pwm);
+    const int base_pwm = feedforwardPwm(target_mps);                                  // Calculate the initial PWM from the target speed
+    const double error_mps = target_mps - actual_mps;                                 // Calculate the difference between target and measured wheel speed
+    int pwm = base_pwm + static_cast<int>(std::lround(kp_pwm_per_mps_ * error_mps));  // Correct the PWM according to the speed error
+    pwm = std::clamp(pwm, -max_pwm_, max_pwm_);                                       // Keep the final PWM within the allowed range
+    return enforceMinPwm(pwm);                                                        // Apply the configured minimum non-zero PWM
   }
 
-  int enforceMinPwm(int pwm) const
+  int enforceMinPwm(int pwm) const // Make sure any non-zero PWM command is strong enough to move the motor
   {
-    if (pwm != 0 && std::abs(pwm) < min_pwm_) {
+    // If the command is non-zero but below the minimum usable PWM,
+    // increase it to the configured minimum while keeping its direction
+    if (pwm != 0 && std::abs(pwm) < min_pwm_) 
+    {
       return pwm > 0 ? min_pwm_ : -min_pwm_;
     }
-    return pwm;
+    
+    return pwm; // Leave zero and sufficiently large PWM values unchanged
   }
 
   // Publish the computed left/right PWM values as a two-element array.
@@ -349,17 +354,17 @@ private:
   // ESP32 firmware over serial.
   void publishPwmCommand(int left_pwm, int right_pwm)
   {
-    std_msgs::msg::Int32MultiArray msg;
-    msg.data = {left_pwm, right_pwm};
-    pwm_publisher_->publish(msg);
+    std_msgs::msg::Int32MultiArray msg;  // Create a ROS 2 message for the two wheel commands
+    msg.data = {left_pwm, right_pwm};    // Store the commands in the order: left wheel, right wheel
+    pwm_publisher_->publish(msg);        // Publish the PWM commands to the wheel controller topic
   }
 };
 
-int main(int argc, char ** argv)
+int main(int argc, char ** argv) // Start ROS 2 and run the wheel velocity controller node
 {
-  rclcpp::init(argc, argv);
-  auto node = std::make_shared<WheelVelocityControllerNode>();
-  rclcpp::spin(node);
-  rclcpp::shutdown();
+  rclcpp::init(argc, argv);                                     // Initialize ROS 2
+  auto node = std::make_shared<WheelVelocityControllerNode>();  // Create the wheel velocity controller node
+  rclcpp::spin(node);                                           // Keep the node running and process its callbacks 
+  rclcpp::shutdown();                                           // Shut down ROS 2 when the node stops
   return 0;
 }
