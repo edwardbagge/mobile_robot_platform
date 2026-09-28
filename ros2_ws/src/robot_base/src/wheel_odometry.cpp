@@ -4,9 +4,21 @@
 // Uses left and right wheel encoder counts to estimate the robot's position,
 // orientation, and velocity, and publishes the result as /odom.
 
+// ROS 2 and message headers
+#include <geometry_msgs/msg/quaternion.hpp>
+#include <geometry_msgs/msg/transform_stamped.hpp>
+#include <nav_msgs/msg/odometry.hpp>
+#include <rclcpp/rclcpp.hpp>
+#include <std_msgs/msg/int64.hpp>
+#include <tf2/LinearMath/Quaternion.h>
+#include <tf2_ros/transform_broadcaster.h>
+
 // Standard C++ libraries used for calculations, memory management, and strings
 #include <algorithm>
+#include <chrono>
 #include <cmath>
+#include <cstdint>
+#include <functional>
 #include <memory>
 #include <string>
 

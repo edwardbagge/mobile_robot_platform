@@ -4,6 +4,12 @@
 // Uses /cmd_vel and wheel encoder feedback to calculate left and right
 // motor PWM commands, which are published on /wheel_pwm_cmd.
 
+// ROS 2 and message headers
+#include <geometry_msgs/msg/twist.hpp>
+#include <rclcpp/rclcpp.hpp>
+#include <std_msgs/msg/int32_multi_array.hpp>
+#include <std_msgs/msg/int64.hpp>
+
 // Standard C++ libraries used for calculations, timing, memory, and thread safety
 #include <algorithm>
 #include <chrono>
