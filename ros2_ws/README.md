@@ -113,29 +113,6 @@ cd ~/Documents/mobile_robot_platform/ros2_ws
 ls -l maps
 ```
 
-## Nav2 notes
-
-Nav2 is separate from the SLAM mapping workflow. Install the Nav2 packages when you are ready to test navigation:
-
-```bash
-sudo apt update
-sudo apt install ros-jazzy-navigation2 ros-jazzy-nav2-bringup
-```
-
-For a first Nav2 test while SLAM is still running:
-
-```bash
-ros2 launch robot_bringup nav2_navigation.launch.py
-```
-
-For Nav2 localization and navigation from a saved map:
-
-```bash
-ros2 launch robot_bringup nav2_map.launch.py map:=$HOME/Documents/mobile_robot_platform/ros2_ws/maps/floor1.yaml
-```
-
-Before relying on Nav2, add a robot-specific `nav2_params.yaml` for this platform. Tune robot radius or footprint, max velocity around `0.08-0.10 m/s`, acceleration limits, `/scan`, `/odom`, `base_link`, and costmap inflation. The current bring-up config publishes wheel odometry at `20.0 Hz` for Nav2.
-
 ## Base topic flow
 
 The current command and feedback path is:
